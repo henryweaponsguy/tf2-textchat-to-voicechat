@@ -1,0 +1,24 @@
+services:
+  tf2-dectalk:
+    image: tf2-dectalk:latest
+    build: .
+    container_name: tf2-dectalk
+    environment:
+      PULSE_SERVER: unix:/run/user/${UID}/pulse/native
+    volumes:
+      # Files cannot be replaced, only modified. Otherwise Docker loses track of them.
+      # Make sure "console.log" exists before starting the container,
+      # otherwise Docker will create a directory with that name on the host
+      - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
+      - ./chat_to_speech.sh:/tts/chat_to_speech.sh:ro
+      - ./get_dectalk_voice.sh:/tts/get_dectalk_voice.sh:ro
+    devices:
+      - /dev/snd:/dev/snd
+    restart: unless-stopped
+    security_opt:
+      - "no-new-privileges=true"
+    cap_drop:
+          - ALL
+    tmpfs:
+      - /tmp
