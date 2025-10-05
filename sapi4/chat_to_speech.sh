@@ -8,7 +8,7 @@ console_log="/tts/console.log"
 # All names must be in lowercase
 # Example: "john\|pablo.gonzales.2007\|engineer gaming"
 # Default: "$^"
-blacklisted_names="dude"
+blacklisted_names="$^"
 
 # Alternatively, a whitelist:
 # All names must be in lowercase
