@@ -22,7 +22,6 @@ RUN export WINEPREFIX=/root/.wine && wineboot && winecfg -v
 
 
 COPY spchapi.exe tv_enua.exe msttsl.exe /root
-
 COPY compare_and_move_files.sh /root
 
 

@@ -28,6 +28,8 @@ RUN tar --no-same-permissions -xzf SAPI4.tar.gz && rm SAPI4.tar.gz
 WORKDIR /root
 RUN winecfg -v
 
+# Before running this container, the 'wine.tar.gz' archive needs to be prepared
+# according to the following instructions:
 # Put the following installers in the 'sapi4-wine/' directory:
 # 'spchapi.exe' and 'tv_enua.exe' can be found in https://github.com/TETYYS/SAPI4
 # These installers will install the Lernout & Hauspie TruVoice voices.
@@ -47,7 +49,7 @@ RUN winecfg -v
 # 'msttsl.exe' specific files:
 # 'drive_c/windows/inf/msTTS.inf'
 # 'drive_c/windows/delttsul.exe'
-# 'drive_c/Program Files (x86)/Common Files/microsoft shared'
+# 'drive_c/Program Files (x86)/Common Files/microsoft shared/'
 COPY wine.tar.gz .
 RUN tar --no-same-permissions -xzf wine.tar.gz && rm wine.tar.gz
 

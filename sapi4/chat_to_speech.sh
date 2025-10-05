@@ -5,17 +5,20 @@
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
-# Example: blacklisted_names="name1\|name2\|name3"
-# Default: blacklisted_names="$^"
-blacklisted_names="$^"
+# All names must be in lowercase
+# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Default: "$^"
+blacklisted_names="dude"
 
 # Alternatively, a whitelist:
-# Example: whitelisted_names="name1\|name2\|name3"
-# Default: whitelisted_names=".*"
+# All names must be in lowercase
+# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Default: ".*"
 whitelisted_names=".*"
 
-# Example: banned_words="nominate\|rtv\|nextmap"
-# Default: banned_words="$^"
+# All words must be in lowercase
+# Example: "nominate\|rtv\|nextmap"
+# Default: "$^"
 banned_words="$^"
 
 
@@ -27,10 +30,10 @@ stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 grep --line-buffered ' :  !tts ' |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
-# Remove messages with blacklisted names
-grep -v --line-buffered "$blacklisted_names" |
-# Keep only messages with whitelisted names
-grep --line-buffered "$whitelisted_names" |
+# Remove messages from blacklisted players
+grep -v --line-buffered "$blacklisted_names :  !tts " |
+# Keep messages only from whitelisted players
+grep --line-buffered "$whitelisted_names :  !tts " |
 # Extract the message
 stdbuf -o0 sed 's/^.*: *!tts *//' |
 # Remove duplicate messages
@@ -48,7 +51,7 @@ stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 grep --line-buffered -v "$banned_words" |
 # Remove messages with excessive character repetition
 grep --line-buffered -v -E '(.)\1{15}' |
-# Filter lines with excessive digit repetition
+# Remove messages with excessive digit repetition
 #grep --line-buffered -v -E '([0-9].*){9,}' |
 # Speak the result aloud
 /tts/get_sapi4_voice.sh

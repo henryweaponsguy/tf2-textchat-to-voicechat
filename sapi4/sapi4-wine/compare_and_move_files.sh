@@ -4,7 +4,7 @@
 declare -A before_map
 declare -A after_map
 
-# Read the first argument into before_map
+# Read the second argument into before_map
 while IFS= read -r line; do
     hash="$(cut -d' ' -f1 <<< "$line")"
     path="$(cut -d' ' -f2- <<< "$line" | sed 's/^ *//')"

@@ -29,17 +29,20 @@ play_audio() {
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
-# Example: blacklisted_names="name1\|name2\|name3"
-# Default: blacklisted_names="$^"
+# All names must be in lowercase
+# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Default: "$^"
 blacklisted_names="$^"
 
 # Alternatively, a whitelist:
-# Example: whitelisted_names="name1\|name2\|name3"
-# Default: whitelisted_names=".*"
+# All names must be in lowercase
+# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Default: ".*"
 whitelisted_names=".*"
 
-# Example: banned_words="nominate\|rtv\|nextmap"
-# Default: banned_words="$^"
+# All words must be in lowercase
+# Example: "nominate\|rtv\|nextmap"
+# Default: "$^"
 banned_words="$^"
 
 
@@ -52,10 +55,12 @@ stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 grep --line-buffered ' :  ' |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
-# Remove messages with blacklisted names
-grep -v --line-buffered "$blacklisted_names" |
-# Keep only messages with whitelisted names
-grep --line-buffered "$whitelisted_names" |
+# Remove messages from blacklisted players
+#grep -v --line-buffered "$blacklisted_names :  !play " |
+grep -v --line-buffered "$blacklisted_names :  " |
+# Keep messages only from whitelisted players
+#grep --line-buffered "$whitelisted_names :  !play " |
+grep --line-buffered "$whitelisted_names :  " |
 # Extract the message
 #stdbuf -o0 sed 's/^.*: *!play *//' |
 stdbuf -o0 sed 's/^.*: * *//' |
