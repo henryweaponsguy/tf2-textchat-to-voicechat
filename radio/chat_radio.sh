@@ -1,11 +1,25 @@
 #!/bin/bash
 
+paplay_pid_file="/tmp/paplay.pid"
 queue_dir="/tts/queue"
 queue_file="/tts/queue.txt"
+skip_vote_file="/tts/skip_votes.txt"
 console_log="/tts/console.log"
 
 mkdir -p "$queue_dir"
 touch "$queue_file"
+touch "$skip_vote_file"
+
+
+cleanup() {
+    > "$skip_vote_file"
+
+    paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
+    kill "$paplay_pid" 2>/dev/null
+    rm "$paplay_pid_file"
+}
+
+trap cleanup SIGINT
 
 
 download_and_queue() {
@@ -24,7 +38,7 @@ download_and_queue() {
     else
         # Download the file
         yt-dlp --extract-audio --audio-format="$audio_format" --match-filter "duration < 600" \
-            -o "$queue_dir/%(title)s.%(ext)s" "$url" --no-playlist --quiet
+        -o "$queue_dir/%(title)s.%(ext)s" "$url" --no-playlist --quiet
         echo "Downloaded: $file"
 
         # Normalize audio
@@ -45,22 +59,38 @@ download_and_queue() {
 play_queue() {
     while [[ -s "$queue_file" ]]; do
         audio_file=$(head -n 1 "$queue_file")
-        tail -n +2 "$queue_file" > "$queue_file.tmp" && cat "$queue_file.tmp" > "$queue_file" && rm "$queue_file.tmp"
 
         if [[ -f "$audio_file" ]]; then
             echo "Playing: $audio_file"
-            paplay --client-name=radio "$audio_file"
+            paplay --client-name=radio "$audio_file" &
+            paplay_pid=$!
+            echo "$paplay_pid" > "$paplay_pid_file"
+            wait "$paplay_pid"
+            > "$paplay_pid_file"
         else
             echo "File not found: $audio_file"
         fi
+
+        tail -n +2 "$queue_file" > "$queue_file.tmp" && cat "$queue_file.tmp" > "$queue_file" && rm "$queue_file.tmp"
     done
 }
 
-start_queue() {
-    play_queue
+skip_current() {
+    paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
 
-    while inotifywait -e modify "$queue_file"; do
+    if [[ -n "$paplay_pid" ]]; then
+        echo "Stopping current playback..."
+        kill "$paplay_pid" 2>/dev/null
+    else
+        echo "No active playback to stop..."
+    fi
+}
+
+start_queue() {
+    while true; do
         play_queue
+
+        inotifywait -e modify "$queue_file"
     done
 }
 
@@ -74,47 +104,59 @@ start_queue &
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
-# All names must be in lowercase
-# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
 # Default: "$^"
 blacklisted_names="$^"
 
 # Alternatively, a whitelist:
-# All names must be in lowercase
-# Example: "john\|pablo.gonzales.2007\|engineer gaming"
+# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
 # Default: ".*"
 whitelisted_names=".*"
 
-# All words must be in lowercase
-# Example: "nominate\|rtv\|nextmap"
+# Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
 # Default: "$^"
 banned_words="$^"
 
 
 # Continuously read the last line of the log as it is updated
-stdbuf -oL tail -f -n 1 "$console_log" |
+stdbuf -oL tail -fn 1 "$console_log" |
 # Sanitize the message
 stdbuf -o0 sed 's/[$;`()]//g' |
-# Search for lines containing " :  !queue "
-grep --line-buffered ' :  !queue ' |
+# Search for lines containing the command
+grep --line-buffered -E ' :  !(queue |skip$)' |
 # Remove messages from blacklisted players
-grep -v --line-buffered "$blacklisted_names :  !queue " |
+grep --line-buffered -v "^${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
-grep --line-buffered "$whitelisted_names :  !queue " |
-# Extract the message
-stdbuf -o0 sed 's/^.*: *!queue *//' |
+grep --line-buffered "^${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
-# Replace repeating exclamation marks with a single one
-# ("!!" repeats the last executed command in bash)
-stdbuf -o0 sed 's/!\{2,\}/!/g' |
+# Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 # Remove messages with banned words
 grep --line-buffered -v "$banned_words" |
 while IFS= read -r line; do
     # Extract YouTube URLs
-    if [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=[A-Za-z0-9_-]+|youtu\.be/[A-Za-z0-9_-]+) ]]; then
+    if grep -q '!queue' <<< "$line" && \
+    [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=[A-Za-z0-9_-]+|youtu\.be/[A-Za-z0-9_-]+) ]]; then
         url="${BASH_REMATCH[0]}"
         download_and_queue "$url"
+    # Vote to skip the currently playing file
+    elif grep -q '!skip' <<< "$line"; then
+        IFS=' :  ' read -r nickname command <<< "$line"
+
+        # Check if the user has not voted yet
+        if ! grep -q "$nickname" "$skip_vote_file"; then
+            echo "$nickname" >> "$skip_vote_file"
+            echo "Voted to skip: $nickname"
+        fi
+
+        # Skip the currently playing file if there are at least 5 skip votes
+        if [[ $(wc -l < "$skip_vote_file") -ge 5 ]]; then
+            # Clear skip votes
+            > "$skip_vote_file"
+
+            skip_current
+            echo "Skipped the file..."
+        fi
     fi
 done
