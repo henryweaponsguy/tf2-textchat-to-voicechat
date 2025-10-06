@@ -142,7 +142,7 @@ while IFS= read -r line; do
         download_and_queue "$url"
     # Vote to skip the currently playing file
     elif grep -q '!skip' <<< "$line"; then
-        IFS=' :  ' read -r nickname command <<< "$line"
+        IFS=' :  ' read -r nickname command_name <<< "$line"
 
         # Check if the user has not voted yet
         if ! grep -q "$nickname" "$skip_vote_file"; then
