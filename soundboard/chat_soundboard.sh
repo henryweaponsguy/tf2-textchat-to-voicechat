@@ -56,7 +56,7 @@ grep --line-buffered -v "^${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
 grep --line-buffered "^${whitelisted_names} :  !" |
 # Convert the message to lowercase
-perl -Cep 'BEGIN { $| = 1 } $_ = lc' |
+perl -C -ep 'BEGIN { $| = 1 } $_ = lc' |
 # Extract the message
 stdbuf -o0 sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' |
 # Remove duplicate messages
