@@ -52,13 +52,14 @@ stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 #grep --line-buffered ' :  !play ' |
 grep --line-buffered ' :  ' |
 # Remove messages from blacklisted players
-grep --line-buffered -v "^${blacklisted_names} :  !" |
+grep --line-buffered -v "^${blacklisted_names} :  " |
 # Keep messages only from whitelisted players
-grep --line-buffered "^${whitelisted_names} :  !" |
+grep --line-buffered "^${whitelisted_names} :  " |
 # Convert the message to lowercase
-perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
+perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |tee -a output.txt |
 # Extract the message
-stdbuf -o0 sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' |
+#stdbuf -o0 sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' |
+stdbuf -o0 sed 's/^.* :  *//' |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Remove non-ASCII and control characters
