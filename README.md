@@ -14,9 +14,7 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 `sapi4` - converts text messages to speech using SAPI4 (including the BonziBUDDY and Microsoft Sam voices, requires compiling SAPI4 before running the container - further instructions in the Dockerfile)
 
-`soundboard` - converts valid text messages to sounds if they are available in the `sounds/` directory
-
-`soundbutton` - plays a random sound from the `sounds/` directory
+`soundboard` - converts valid text messages to sounds if they are available in the `sounds/` directory (includes `soundbutton` that plays a random sound from the `sounds/` directory)
 
 ---
 
