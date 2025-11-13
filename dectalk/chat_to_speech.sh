@@ -27,9 +27,9 @@ stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 # Search for lines containing the command
 grep --line-buffered ' :  !dec ' |
 # Remove messages from blacklisted players
-grep --line-buffered -v "^${blacklisted_names} :  !" |
+grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
-grep --line-buffered "^${whitelisted_names} :  !" |
+grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
 # Extract the message

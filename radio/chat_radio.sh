@@ -125,9 +125,9 @@ stdbuf -o0 sed 's/[$;`()]//g' |
 # Search for lines containing the command
 grep --line-buffered -E ' :  !(queue |skip$)' |
 # Remove messages from blacklisted players
-grep --line-buffered -v "^${blacklisted_names} :  !" |
+grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
-grep --line-buffered "^${whitelisted_names} :  !" |
+grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Remove non-ASCII and control characters

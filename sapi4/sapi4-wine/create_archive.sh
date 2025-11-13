@@ -20,10 +20,10 @@ docker exec "$CONTAINER_NAME" bash /root/compare_and_move_files.sh "/root/tmp/co
 
 docker exec "$CONTAINER_NAME" bash -c "mv /root/tmp/compare_output/root/.wine /root/tmp/.wine"
 
-docker exec -it "$CONTAINER_NAME" bash -c "cd /root/tmp && tar --sort=name --owner=0 --group=0 --mtime='UTC 1970-01-01' -cf - .wine/ | gzip -n > /root/wine.tar.gz"
+docker exec "$CONTAINER_NAME" bash -c "cd /root/tmp && tar --sort=name --owner=0 --group=0 --mtime='UTC 1970-01-01' -cf - .wine/ | gzip -n > /root/wine.tar.gz"
 echo "Archive created..."
 
-docker exec -it "$CONTAINER_NAME" bash -c "mv /root/wine.tar.gz /out"
+docker exec "$CONTAINER_NAME" bash -c "mv /root/wine.tar.gz /out"
 echo "Archive copied outside the container..."
 
 docker compose down

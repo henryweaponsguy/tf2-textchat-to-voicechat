@@ -16,6 +16,8 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 `soundboard` - converts valid text messages to sounds if they are available in the `sounds/` directory
 
+`soundbutton` - plays a random sound from the `sounds/` directory
+
 ---
 
 ### How to run

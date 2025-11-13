@@ -4,7 +4,7 @@ voices=(m1 m2 m3 m4 m5 m6 m7 f1 f2 f3 f4)
 
 
 speak_text() {
-    local input_text="$1"
+    input_text="$1"
     [[ -z "$input_text" ]] && return
 
     audio_file="$(mktemp /tmp/espeak_voice-XXXXXXXXXX.wav)"
@@ -30,7 +30,7 @@ elif ! tty -s; then
     done
 else
     echo "Usage:"
-    echo "  $0 \"Your text here\"     # Speak single line"
-    echo "  echo 'text' | $0           # Stream from pipe"
+    echo "  $0 \"Your text here\"     # Speak a single line"
+    echo "  echo 'text' | $0           # Stream from a pipe"
     exit 1
 fi

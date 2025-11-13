@@ -5,21 +5,14 @@ sound_dir="/tts/sounds"
 
 play_audio() {
     while IFS= read -r line; do
-        # Trim whitespace
-        clean_line=$(echo "$line" | xargs)
-
-        # Match files
         shopt -s nullglob
-        matches=(
-            "$sound_dir/$clean_line".*
-            "$sound_dir/$clean_line "[0-9]*.*
-        )
+        matches=( "$sound_dir/"*.* )
         shopt -u nullglob
 
         if [[ ${#matches[@]} -gt 0 ]]; then
             selected="${matches[RANDOM % ${#matches[@]}]}"
 
-            paplay --client-name=soundboard "$selected" >/dev/null 2>&1 &
+            paplay --client-name=soundbutton "$selected" >/dev/null 2>&1 &
         fi
     done
 }
@@ -50,24 +43,12 @@ stdbuf -oL tail -fn 1 "$console_log" |
 # Sanitize the message
 stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 # Search for lines containing the command
-#grep --line-buffered ' :  !play ' |
-grep --line-buffered ' :  ' |
+grep --line-buffered ' :  !play' |
 # Remove messages from blacklisted players
-#grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
-grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  " |
+grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
-#grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
-grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  " |
-# Convert the message to lowercase
-perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
-# Extract the message
-#stdbuf -o0 sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' |
-stdbuf -o0 sed 's/^.* :  *//' |
+grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
-# Remove non-ASCII and control characters
-stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Remove messages with banned words
-grep --line-buffered -v "$banned_words" |
 # Play the audio file
 play_audio
