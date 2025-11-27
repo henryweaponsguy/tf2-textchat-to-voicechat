@@ -138,7 +138,7 @@ stdbuf -o0 sed 's/[$;`()]//g' |
 #stdbuf -o0 uniq |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Remove messages with banned words
+# Remove messages with blacklisted words
 grep --line-buffered -v "$blacklisted_words" |
 while IFS= read -r line; do
     # Extract YouTube URLs

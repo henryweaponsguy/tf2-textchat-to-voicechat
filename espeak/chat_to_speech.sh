@@ -30,7 +30,7 @@ grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !
 # Keep messages only from whitelisted players
 grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 # Sanitize the message
-stdbuf -o0 sed 's/[$;`()]//g' |
+stdbuf -o0 sed 's/[$;`()\\]//g' ||
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
 # Extract the message
@@ -43,7 +43,7 @@ stdbuf -o0 sed  -e 's/btw/by the way/g' \
                 -e 's/idk/i don'\''t know/g' |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Remove messages with banned words
+# Remove messages with blacklisted words
 grep --line-buffered -v "$blacklisted_words" |
 # Remove messages with excessive character repetition
 grep --line-buffered -Ev '(.)\1{15}' |
