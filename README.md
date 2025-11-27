@@ -14,6 +14,8 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 `sapi4` - converts text messages to speech using SAPI4 (including the BonziBUDDY and Microsoft Sam voices, requires compiling SAPI4 before running the container - further instructions in the Dockerfile)
 
+`sentence-mixer` - converts text messages to speech using files in the `sounds/` directory. The audio files need to have the same parameters (channel count, codec, sample rate), otherwise the output audio will come out corrupted
+
 `soundboard` - converts valid text messages to sounds if they are available in the `sounds/` directory (also includes `soundbutton` that plays a random sound from the `sounds/` directory)
 
 ---
@@ -55,4 +57,4 @@ Additionally, while you are in the Voice Settings, set `Voice Input Device` to y
 
 `scripts/clean_console_log.sh` - truncates the `console.log` file in TF2's directory
 
-`scripts/create_virtual_cable.sh` - creates a virtual cable (using PipeWire)
+`scripts/create_virtual_cable.sh` - creates a virtual cable

@@ -32,27 +32,32 @@ download_and_queue() {
     file="$queue_dir/$(yt-dlp --skip-download --print title "$url").$audio_format"
     echo "Title: $file"
 
-    # Check if the file already exists
-    if [[ -f "$file" ]]; then
-        echo "Already downloaded: $file"
+    # Check if the file is a music video
+    if ! yt-dlp --no-warnings --print "%(categories)s" "$url" | grep -q "Music"; then
+        echo "Not a music video: $file"
     else
-        # Download the file
-        yt-dlp --extract-audio --audio-format="$audio_format" --match-filter "duration < 600" \
-        -o "$queue_dir/%(title)s.%(ext)s" "$url" --no-playlist --quiet
-        echo "Downloaded: $file"
+        # Check if the file already exists
+        if [[ -f "$file" ]]; then
+            echo "Already downloaded: $file"
+        else
+            # Download the file
+            yt-dlp --extract-audio --audio-format="$audio_format" --match-filter "duration < 1200" \
+            -o "$queue_dir/%(title)s.%(ext)s" "$url" --no-playlist --quiet
+            echo "Downloaded: $file"
 
-        # Normalize audio
-        ffmpeg -hide_banner -loglevel error -i "$file" \
-        -af loudnorm=I=-23:TP=-1.0:LRA=11 temp."$audio_format" && mv temp."$audio_format" "$file"
-        echo "Normalized: $file"
-    fi
+            # Normalize audio
+            ffmpeg -hide_banner -loglevel error -i "$file" \
+            -af loudnorm=I=-23:TP=-1.0:LRA=11 temp."$audio_format" && mv temp."$audio_format" "$file"
+            echo "Normalized: $file"
+        fi
 
-    # Add to the queue if not already queued
-    if ! grep -Fxq "$file" "$queue_file"; then
-        echo "$file" >> "$queue_file"
-        echo "Queued: $file"
-    else
-        echo "Already in the queue: $file"
+        # Add to the queue if not already queued
+        if ! grep -Fxq "$file" "$queue_file"; then
+            echo "$file" >> "$queue_file"
+            echo "Queued: $file"
+        else
+            echo "Already in the queue: $file"
+        fi
     fi
 }
 
@@ -104,6 +109,7 @@ start_queue &
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
+# User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
 # Default: "$^"
 blacklisted_names="$^"
@@ -115,31 +121,30 @@ whitelisted_names=".*"
 
 # Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
 # Default: "$^"
-banned_words="$^"
+blacklisted_words="$^"
 
 
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
+# Search for lines containing the command
+grep --line-buffered -E ' :  !(queue|skip) ' |
+# Remove messages from blacklisted players
+grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+# Keep messages only from whitelisted players
+grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 # Sanitize the message
 stdbuf -o0 sed 's/[$;`()]//g' |
-# Search for lines containing the command
-grep --line-buffered -E ' :  !(queue |skip$)' |
-# Remove messages from blacklisted players
-grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
-# Keep messages only from whitelisted players
-grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 # Remove messages with banned words
-grep --line-buffered -v "$banned_words" |
+grep --line-buffered -v "$blacklisted_words" |
 while IFS= read -r line; do
     # Extract YouTube URLs
     if grep -q '!queue' <<< "$line" && \
-    [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=[A-Za-z0-9_-]+|youtu\.be/[A-Za-z0-9_-]+) ]]; then
-        url="${BASH_REMATCH[0]}"
-        download_and_queue "$url"
+    [[ "$line" =~ (https?://)?(www\.)?((youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]+) ]]; then
+        download_and_queue "${BASH_REMATCH[0]}"
     # Vote to skip the currently playing file
     elif grep -q '!skip' <<< "$line"; then
         IFS=' :  ' read -r nickname command_name <<< "$line"

@@ -30,6 +30,7 @@ play_audio() {
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
+# User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
 # Default: "$^"
 blacklisted_names="$^"
@@ -39,25 +40,25 @@ blacklisted_names="$^"
 # Default: ".*"
 whitelisted_names=".*"
 
-# All words must be in lowercase
+# Word blacklist (all words must be in lowercase):
 # Example: "nominate\|rtv\|nextmap"
 # Default: "$^"
-banned_words="$^"
+blacklisted_words="$^"
 
 
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
-# Sanitize the message
-stdbuf -o0 sed 's/["'\''$&|;`\\()]//g' |
 # Search for lines containing the command
 #grep --line-buffered ' :  !play ' |
 grep --line-buffered ' :  ' |
 # Remove messages from blacklisted players
-#grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  !" |
-grep --line-buffered -Ev "^(\*DEAD\*)?(TEAM)? ?${blacklisted_names} :  " |
+# grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  " |
 # Keep messages only from whitelisted players
-#grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  !" |
-grep --line-buffered -E "^(\*DEAD\*)?(TEAM)? ?${whitelisted_names} :  " |
+# grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
+grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  " |
+# Sanitize the message
+stdbuf -o0 sed 's/[$;`()]//g' |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
 # Extract the message
@@ -68,6 +69,6 @@ stdbuf -o0 sed 's/^.* :  *//' |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 # Remove messages with banned words
-grep --line-buffered -v "$banned_words" |
+grep --line-buffered -v "$blacklisted_words" |
 # Play the audio file
 play_audio
