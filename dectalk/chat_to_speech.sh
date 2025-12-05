@@ -45,9 +45,7 @@ stdbuf -o0 sed  -e 's/btw/by the way/g' \
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 # Remove messages with blacklisted words
 grep --line-buffered -v "$blacklisted_words" |
-# Remove messages with excessive character repetition
-grep --line-buffered -Ev '(.)\1{15}' |
-# Remove messages with excessive digit repetition
-#grep --line-buffered -Ev '([0-9].*){9,}' |
+# Remove messages with excessive repetition
+grep --line-buffered -Ev '(.{2,})\1{5,}' |
 # Speak the result aloud
 /tts/get_dectalk_voice.sh

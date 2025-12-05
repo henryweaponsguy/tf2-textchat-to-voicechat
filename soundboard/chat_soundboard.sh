@@ -1,29 +1,7 @@
 #!/bin/bash
 
+# Soundboard sounds directory
 sound_dir="/tts/sounds"
-
-
-play_audio() {
-    while IFS= read -r line; do
-        # Trim whitespace
-        clean_line=$(echo "$line" | awk '{$1=$1; print}')
-
-        # Match files
-        shopt -s nullglob
-        matches=(
-            "$sound_dir/$clean_line".*
-            "$sound_dir/$clean_line "[0-9]*.*
-        )
-        shopt -u nullglob
-
-        if [[ ${#matches[@]} -gt 0 ]]; then
-            selected="${matches[RANDOM % ${#matches[@]}]}"
-
-            paplay --client-name=soundboard "$selected" >/dev/null 2>&1 &
-        fi
-    done
-}
-
 
 # Add '-condebug' as TF2's launch parameter.
 # Alternatively add "con_logfile <logfile location>" to autoexec.cfg
@@ -52,10 +30,10 @@ stdbuf -oL tail -fn 1 "$console_log" |
 #grep --line-buffered ' :  !play ' |
 grep --line-buffered ' :  ' |
 # Remove messages from blacklisted players
-# grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+#grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
 grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  " |
 # Keep messages only from whitelisted players
-# grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
+#grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  " |
 # Sanitize the message
 stdbuf -o0 sed 's/[$;`()\\]//g' |
@@ -68,7 +46,24 @@ stdbuf -o0 sed 's/^.* :  *//' |
 #stdbuf -o0 uniq |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Remove messages with banned words
+# Remove messages with blacklisted words
 grep --line-buffered -v "$blacklisted_words" |
 # Play the audio file
-play_audio
+while IFS= read -r line; do
+    # Trim whitespace
+    clean_line=$(echo "$line" | awk '{$1=$1; print}')
+
+    # Match files
+    shopt -s nullglob
+    matches=(
+        "$sound_dir/$clean_line".*
+        "$sound_dir/$clean_line "[0-9]*.*
+    )
+    shopt -u nullglob
+
+    if [[ ${#matches[@]} -gt 0 ]]; then
+        selected="${matches[RANDOM % ${#matches[@]}]}"
+
+        paplay --client-name=soundboard "$selected" >/dev/null 2>&1 &
+    fi
+done

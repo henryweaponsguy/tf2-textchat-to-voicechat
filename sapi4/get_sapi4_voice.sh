@@ -2,15 +2,16 @@
 
 sapi4_server="http://127.0.0.1:5491"
 
-voices=(\
-"Adult%20Female%20%231%2C%20American%20English%20(TruVoice)" \
-"Adult%20Female%20%232%2C%20American%20English%20(TruVoice)" \
-"Adult%20Male%20%231%2C%20American%20English%20(TruVoice)" \
-"Adult%20Male%20%232%2C%20American%20English%20(TruVoice)" \
-"Adult%20Male%20%233%2C%20American%20English%20(TruVoice)" \
-"Mary" \
-"Mike" \
-"Sam")
+voices=(
+    "Adult%20Female%20%231%2C%20American%20English%20(TruVoice)"
+    "Adult%20Female%20%232%2C%20American%20English%20(TruVoice)"
+    "Adult%20Male%20%231%2C%20American%20English%20(TruVoice)"
+    "Adult%20Male%20%232%2C%20American%20English%20(TruVoice)"
+    "Adult%20Male%20%233%2C%20American%20English%20(TruVoice)"
+    "Mary"
+    "Mike"
+    "Sam"
+)
 
 
 speak_text() {

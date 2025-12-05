@@ -1,22 +1,7 @@
 #!/bin/bash
 
+# Soundboard sounds directory
 sound_dir="/tts/sounds"
-
-
-play_audio() {
-    while IFS= read -r line; do
-        shopt -s nullglob
-        matches=( "$sound_dir/"*.* )
-        shopt -u nullglob
-
-        if [[ ${#matches[@]} -gt 0 ]]; then
-            selected="${matches[RANDOM % ${#matches[@]}]}"
-
-            paplay --client-name=soundbutton "$selected" >/dev/null 2>&1 &
-        fi
-    done
-}
-
 
 # Add '-condebug' as TF2's launch parameter.
 # Alternatively add "con_logfile <logfile location>" to autoexec.cfg
@@ -45,4 +30,14 @@ grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Play the audio file
-play_audio
+while IFS= read -r line; do
+    shopt -s nullglob
+    matches=( "$sound_dir/"*.* )
+    shopt -u nullglob
+
+    if [[ ${#matches[@]} -gt 0 ]]; then
+        selected="${matches[RANDOM % ${#matches[@]}]}"
+
+        paplay --client-name=soundbutton "$selected" >/dev/null 2>&1 &
+    fi
+done

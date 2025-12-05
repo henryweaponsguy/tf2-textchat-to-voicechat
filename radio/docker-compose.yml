@@ -12,7 +12,6 @@ services:
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
       - ./chat_radio.sh:/tts/chat_radio.sh:ro
-      - ./queue.txt:/tts/queue.txt
     devices:
       - /dev/snd:/dev/snd
     restart: unless-stopped
