@@ -205,6 +205,7 @@ while IFS= read -r line; do
         download_and_queue "${BASH_REMATCH[-1]}"
     # Vote to skip the currently playing file
     elif grep -q '!skip' <<< "$line"; then
+        # Check if there is a file playing
         if pgrep -f "^paplay --client-name=radio " > /dev/null; then
             IFS=' :  ' read -r nickname command_name <<< "$line"
 

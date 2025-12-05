@@ -10,7 +10,7 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 `espeak` - converts text messages to speech using eSpeak (the easiest TTS engine to setup, no compilation required)
 
-`radio` - allows queuing YouTube videos to be downloaded and played next
+`radio` - allows queuing YouTube videos to be downloaded and played next. Also allows voting to skip the currently playing file
 
 `sapi4` - converts text messages to speech using SAPI4 (including the BonziBUDDY and Microsoft Sam voices, requires compiling SAPI4 before running the container - further instructions in the Dockerfile)
 
