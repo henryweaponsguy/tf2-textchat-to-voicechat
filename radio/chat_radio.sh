@@ -151,7 +151,7 @@ play_queue() {
             )
             file_title=$(echo "$file_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
-            speak_text "Now playing: $file_title."
+            speak_text "Now playing: $file_title"
 
             paplay --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
