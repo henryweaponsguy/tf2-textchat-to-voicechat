@@ -6,17 +6,19 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 ### Available scripts
 
-`dectalk` - converts text messages to speech using DECtalk (also known as the Moonbase Alpha voice). The phoneme format works, although the maximum text message length limits it significantly
-
-`espeak` - converts text messages to speech using eSpeak (the easiest TTS engine to setup, no compilation required)
+`poll` - allows creating simple 'yes/no' polls
 
 `radio` - allows queuing YouTube videos to be downloaded and played next. Also allows voting to skip the currently playing file
-
-`sapi4` - converts text messages to speech using SAPI4 (including the BonziBUDDY and Microsoft Sam voices, requires compiling SAPI4 before running the container - further instructions in the Dockerfile)
 
 `sentence-mixer` - converts text messages to speech using files in the `sounds/` directory. The audio files need to have the same parameters (channel count, codec, sample rate), otherwise the output audio will come out corrupted
 
 `soundboard` - converts valid text messages to sounds if they are available in the `sounds/` directory (also includes `soundbutton` that plays a random sound from the `sounds/` directory)
+
+`tts-dectalk` - converts text messages to speech using DECtalk (also known as the Moonbase Alpha voice). The phoneme format works, although the maximum text message length limits it significantly
+
+`tts-espeak` - converts text messages to speech using eSpeak (the easiest TTS engine to setup, no compilation required)
+
+`tts-sapi4` - converts text messages to speech using SAPI4 (including the BonziBUDDY and Microsoft Sam voices, requires compiling SAPI4 before running the container - further instructions in the Dockerfile)
 
 ---
 

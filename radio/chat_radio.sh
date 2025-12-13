@@ -1,20 +1,18 @@
 #!/bin/bash
 
-# Add '-condebug' as TF2's launch parameter.
-# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
-# e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
-console_log="/tts/console.log"
-
 announcer_pid_file="/tmp/announcer.pid"
+downloader_pid_file="/tmp/downloader.pid"
 paplay_pid_file="/tmp/paplay.pid"
 queue_pid_file="/tmp/queue.pid"
 queue_dir="/tts/queue"
 queue_file="/tts/queue.txt"
 skip_vote_file="/tts/skip_votes.txt"
+recently_played_history_file="/tts/recently_played_history.txt"
 
 mkdir -p "$queue_dir"
 touch "$queue_file"
 touch "$skip_vote_file"
+touch "$recently_played_history_file"
 
 
 cleanup() {
@@ -25,6 +23,14 @@ cleanup() {
         kill "$queue_pid" 2>/dev/null
         wait "$queue_pid" 2>/dev/null
         rm "$queue_pid_file"
+    fi
+
+    if [ -e "$downloader_pid_file" ]; then
+        while read -r pid; do
+            kill "$pid" 2>/dev/null
+            wait "$pid" 2>/dev/null
+        done < "$downloader_pid_file"
+        rm "$downloader_pid_file"
     fi
 }
 
@@ -101,10 +107,23 @@ download_and_queue() {
         fi
     fi
 
-    # Add to the queue if not already queued
+    # Check if the file is not queued already
     if ! grep -Fxq "$audio_file" "$queue_file"; then
-        echo "$audio_file" >> "$queue_file"
-        echo "Queued: $audio_file"
+        # Check if the file has not been recently played
+        if ! grep -Fxq "$audio_file" "$recently_played_history_file"; then
+            # Queue the file
+            echo "$audio_file" >> "$queue_file"
+            echo "Queued: $audio_file"
+
+            recently_played_history_length=5
+
+            # Add the file to the recently played files list
+            echo "$audio_file" >> "$recently_played_history_file"
+            tail -n "$recently_played_history_length" "$recently_played_history_file" > "$recently_played_history_file.tmp"
+            mv "$recently_played_history_file.tmp" "$recently_played_history_file"
+        else
+            echo "File recently played: $audio_file"
+        fi
     else
         echo "Already in the queue: $audio_file"
     fi
@@ -130,8 +149,9 @@ play_queue() {
                 -e "s/[[\(]( *(4k|hd|hq|music|official|remastered|video)){1,7} *[]\)]//gI" \
                 -e "s/[-_]/,/g"
             )
+            file_title=$(echo "$file_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
-            speak_text "now playing: $file_title"
+            speak_text "Now playing: $file_title."
 
             paplay --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
@@ -179,9 +199,13 @@ start_queue() {
 
 # Start the playback loop in the background
 start_queue &
-queue_pid=$!
-echo "$queue_pid" > "$queue_pid_file"
+echo $! > "$queue_pid_file"
 
+
+# Add '-condebug' as TF2's launch parameter.
+# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
+# e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
+console_log="/tts/console.log"
 
 # User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
@@ -202,28 +226,29 @@ while IFS= read -r line; do
     # Extract YouTube URLs
     if grep -q '!queue' <<< "$line" && \
     [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+) ]]; then
-        download_and_queue "${BASH_REMATCH[-1]}"
+        download_and_queue "${BASH_REMATCH[-1]}" &
+        echo $! >> "$downloader_pid_file"
     # Vote to skip the currently playing file
     elif grep -q '!skip' <<< "$line"; then
         # Check if there is a file playing
         if pgrep -f "^paplay --client-name=radio " > /dev/null; then
-            IFS=' :  ' read -r nickname command_name <<< "$line"
+            username=$(sed 's/\(\*DEAD\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/' <<< "$line")
 
             # Check if the user has not voted yet
-            if ! grep -q "$nickname" "$skip_vote_file"; then
-                echo "$nickname" >> "$skip_vote_file"
-                echo "Voted to skip: $nickname"
+            if ! grep -q "$username" "$skip_vote_file"; then
+                echo "$username" >> "$skip_vote_file"
+                echo "Voted to skip: $username"
 
                 required_vote_count=5
                 vote_count=$(wc -l < "$skip_vote_file")
 
                 if [[ $(( $required_vote_count - $vote_count )) -gt 1 ]]; then
-                    announce_text "$(( $required_vote_count - $vote_count )) votes remaining"
+                    announce_text "$(( $required_vote_count - $vote_count )) votes remaining."
                 elif [[ $(( $required_vote_count - $vote_count )) -eq 1 ]]; then
-                    announce_text "$(( $required_vote_count - $vote_count )) vote remaining"
+                    announce_text "$(( $required_vote_count - $vote_count )) vote remaining."
                 # Skip the currently playing file if the required number of skip votes has been reached
                 else
-                    announce_text "skipping the file"
+                    announce_text "Skipping the file."
 
                     echo "Skipping the file..."
                     skip_current
