@@ -31,6 +31,6 @@ elif ! tty -s; then
 else
     echo "Usage:"
     echo "  $0 \"Your text here\"     # Speak a single line"
-    echo "  echo 'text' | $0           # Stream from a pipe"
+    echo "  echo 'text' | $0          # Stream from a pipe"
     exit 1
 fi

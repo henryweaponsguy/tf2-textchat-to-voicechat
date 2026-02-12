@@ -22,7 +22,7 @@ whitelisted_names=".*"
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
 # Search for lines containing the command
-grep --line-buffered ' :  !play' |
+grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !play" |
 # Remove messages from blacklisted players
 grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
@@ -32,12 +32,12 @@ grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 # Play the audio file
 while IFS= read -r line; do
     shopt -s nullglob
-    matches=( "$sound_dir/"*.* )
+    matched_files=( "$sound_dir/"*.* )
     shopt -u nullglob
 
-    if [[ ${#matches[@]} -gt 0 ]]; then
-        selected="${matches[RANDOM % ${#matches[@]}]}"
+    if [[ ${#matched_files[@]} -gt 0 ]]; then
+        selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
-        paplay --client-name=soundbutton "$selected" >/dev/null 2>&1 &
+        paplay --client-name=soundbutton "$selected_file" >/dev/null 2>&1 &
     fi
 done

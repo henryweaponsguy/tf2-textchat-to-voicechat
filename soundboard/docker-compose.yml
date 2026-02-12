@@ -12,11 +12,11 @@ services:
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
       - ./chat_soundboard.sh:/tts/chat_soundboard.sh:ro
-      - ./chat_soundbutton.sh:/tts/chat_soundbutton.sh:ro
       - ./sounds:/tts/sounds:ro
     devices:
       - /dev/snd:/dev/snd
     restart: unless-stopped
+    network_mode: none
     security_opt:
       - "no-new-privileges=true"
     cap_drop:

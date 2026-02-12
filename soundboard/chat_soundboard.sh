@@ -18,7 +18,7 @@ blacklisted_names="$^"
 # Default: ".*"
 whitelisted_names=".*"
 
-# Word blacklist (all words must be in lowercase):
+# Word blacklist:
 # Example: "nominate\|rtv\|nextmap"
 # Default: "$^"
 blacklisted_words="$^"
@@ -27,8 +27,8 @@ blacklisted_words="$^"
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
 # Search for lines containing the command
-#grep --line-buffered ' :  !play ' |
-grep --line-buffered ' :  ' |
+#grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !play " |
+grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  " |
 # Remove messages from blacklisted players
 #grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
 grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  " |
@@ -37,33 +37,32 @@ grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  "
 grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  " |
 # Sanitize the message
 stdbuf -o0 sed 's/[$;`()\\]//g' |
+# Extract the message
+#stdbuf -o0 sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  ![a-zA-Z0-9_]\+ *//' |
+stdbuf -o0 sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  *//' |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
-# Extract the message
-#stdbuf -o0 sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' |
-stdbuf -o0 sed 's/^.* :  *//' |
-# Remove duplicate messages
-#stdbuf -o0 uniq |
+# Remove messages with blacklisted words
+grep --line-buffered -iv "$blacklisted_words" |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Remove messages with blacklisted words
-grep --line-buffered -v "$blacklisted_words" |
+# Trim and normalize whitespace
+stdbuf -o0 sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' |
+# Remove duplicate messages
+#stdbuf -o0 uniq |
 # Play the audio file
 while IFS= read -r line; do
-    # Trim whitespace
-    clean_line=$(echo "$line" | awk '{$1=$1; print}')
-
     # Match files
     shopt -s nullglob
-    matches=(
-        "$sound_dir/$clean_line".*
-        "$sound_dir/$clean_line "[0-9]*.*
+    matched_files=(
+        "$sound_dir/$line".*
+        "$sound_dir/$line "[0-9]*.*
     )
     shopt -u nullglob
 
-    if [[ ${#matches[@]} -gt 0 ]]; then
-        selected="${matches[RANDOM % ${#matches[@]}]}"
+    if [[ ${#matched_files[@]} -gt 0 ]]; then
+        selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
-        paplay --client-name=soundboard "$selected" >/dev/null 2>&1 &
+        paplay --client-name=soundboard "$selected_file" >/dev/null 2>&1 &
     fi
 done

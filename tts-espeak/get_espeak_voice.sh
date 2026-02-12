@@ -1,6 +1,6 @@
 #!/bin/bash
 
-voices=(m1 m2 m3 m4 m5 m6 m7 f1 f2 f3 f4)
+voices=("m1" "m2" "m3" "m4" "m5" "m6" "m7" "f1" "f2" "f3" "f4")
 
 
 speak_text() {
@@ -10,7 +10,7 @@ speak_text() {
     audio_file="$(mktemp /tmp/espeak_voice-XXXXXXXXXX.wav)"
 
     #espeak -v en+m5 -w "$audio_file" "$input_text"
-    espeak -v "en+$(shuf -n1 -e "${voices[@]}")" -w "$audio_file" "$input_text"
+    espeak -v "en+${voices[RANDOM % ${#voices[@]}]}" -w "$audio_file" "$input_text"
 
     (
         paplay --client-name=espeak "$audio_file" >/dev/null 2>&1
@@ -31,6 +31,6 @@ elif ! tty -s; then
 else
     echo "Usage:"
     echo "  $0 \"Your text here\"     # Speak a single line"
-    echo "  echo 'text' | $0           # Stream from a pipe"
+    echo "  echo 'text' | $0          # Stream from a pipe"
     exit 1
 fi

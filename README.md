@@ -1,6 +1,6 @@
 # Text chat-parsing tools for Team Fortress 2
 
-This repo contains a couple text chat to voice chat scripts for TF2. These scripts were written with the intention of running them in Docker containers, but it should be possible to simply run the `.sh` files on bare metal (provided all dependencies are met and file paths are altered). It may even be possible to run them on Windows as long as you have [Bash](https://git-scm.com/downloads/win) installed, but this has not been tested
+This repo contains a couple text chat to voice chat scripts for TF2. These scripts were written with the intention of running them in Docker containers, but it should be possible to simply run the `.sh` or `.py` files on bare metal (provided all dependencies are met and file paths are altered)
 
 ---
 

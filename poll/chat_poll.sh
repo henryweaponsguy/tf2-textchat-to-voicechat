@@ -1,19 +1,17 @@
 #!/bin/bash
 
-sound_dir="/tts/sounds"
-vote_file="/tts/votes.txt"
-poll_pid_file="/tmp/poll.pid"
-poll_state_file="/tmp/poll.open"
-
-touch "$vote_file"
-
-
-cleanup() {
-    if [ -e "$poll_state_file" ]; then
-        rm "$poll_state_file"
+exit_cleanup() {
+    if [ -e "$poll_open_state_file" ]; then
+        rm "$poll_open_state_file"
     fi
 
-    > "$vote_file"
+    if [ -e "$poll_running_state_file" ]; then
+        rm "$poll_running_state_file"
+    fi
+
+    if [ -e "$vote_file" ]; then
+        rm "$vote_file"
+    fi
 
     poll_pid=$(cat "$poll_pid_file" 2>/dev/null)
     if [ -n "$poll_pid" ]; then
@@ -23,7 +21,43 @@ cleanup() {
     fi
 }
 
-trap cleanup SIGINT SIGTERM EXIT
+# Exit cleanly on CTRL+C and system shutdown
+trap exit_cleanup SIGINT SIGTERM EXIT
+
+
+sound_dir="/tts/sounds"
+vote_file="/tts/votes.txt"
+poll_pid_file="/tmp/poll.pid"
+poll_open_state_file="/tmp/poll.open"
+poll_running_state_file="/tmp/poll.running"
+
+touch "$vote_file"
+
+
+# Add '-condebug' as TF2's launch parameter.
+# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
+# e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
+console_log="/tts/console.log"
+
+# User blacklist:
+# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Default: "$^"
+blacklisted_names="$^"
+
+# Alternatively, a whitelist:
+# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Default: ".*"
+whitelisted_names=".*"
+
+# Word blacklist:
+# Example: "nominate\|rtv\|nextmap"
+# Default: "$^"
+blacklisted_words="$^"
+
+# Whitelist for creating a poll:
+# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Default: ".*"
+whitelisted_poll_names=".*"
 
 
 play_sound() {
@@ -42,15 +76,17 @@ speak_text() {
 }
 
 start_poll() {
-    required_vote_count=10
-    time_limit=30
+    touch "$poll_running_state_file"
+
+    local required_vote_count=10
+    local time_limit=30
 
     play_sound "start"
     speak_text "A poll has started: $1"
 
-    touch "$poll_state_file"
+    touch "$poll_open_state_file"
 
-    start_time=$(date +%s)
+    local start_time=$(date +%s)
     while (( $(( $(date +%s) - start_time )) < time_limit )); do
         sleep 1
 
@@ -59,68 +95,51 @@ start_poll() {
         fi
     done
 
-    rm "$poll_state_file"
+    rm "$poll_open_state_file"
+
+    yes_count=$(grep -c -- '--SEP--yes$' "$vote_file")
+    no_count=$(grep -c -- '--SEP--no$' "$vote_file")
 
     if (( $(wc -l < "$vote_file") == 0 )); then
         play_sound "failure"
         speak_text "The poll has ended: nobody has voted."
-    elif (( $(grep -c -- '----yes$' "$vote_file") > $(grep -c -- '----no$' "$vote_file") )); then
+    elif (( "$yes_count" > "$no_count" )); then
         play_sound "success"
         speak_text "The poll has ended: the majority has voted 'yes'."
+    elif (( "$yes_count" == "$no_count" )); then
+        play_sound "failure"
+        speak_text "The poll has ended in a draw."
     else
         play_sound "failure"
         speak_text "The poll has ended: the majority has voted 'no'."
     fi
 
+    rm "$poll_running_state_file"
     > "$vote_file"
 }
 
 
-# Add '-condebug' as TF2's launch parameter.
-# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
-# e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
-console_log="/tts/console.log"
-
-# User blacklist:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-# Default: "$^"
-blacklisted_names="$^"
-
-# Alternatively, a whitelist:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-# Default: ".*"
-whitelisted_names=".*"
-
-# Word blacklist (all words must be in lowercase):
-# Example: "nominate\|rtv\|nextmap"
-# Default: "$^"
-blacklisted_words="$^"
-
-# Whitelist for creating a poll:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-# Default: ".*"
-whitelisted_poll_names=".*"
-
-
 while IFS= read -r line; do
-    username=$(sed 's/\(\*DEAD\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/' <<< "$line")
-    command_content=$(sed 's/^.* :  ![a-zA-Z0-9_]\+ *//' <<< "$line")
+    command_input=$(sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  ![a-zA-Z0-9_]\+ *//' <<< "$line")
 
-    if grep -q '!poll' <<< "$line" && grep -q "$whitelisted_poll_names" <<< "$line"; then
-        if [ ! -e "$poll_state_file" ]; then
-            start_poll "$command_content" &
+    if grep -q '!poll ' <<< "$line" && grep -q "$whitelisted_poll_names" <<< "$line"; then
+        # Check if the poll is running
+        if [ ! -e "$poll_running_state_file" ]; then
+            start_poll "$command_input" &
             echo $! > "$poll_pid_file"
         fi
-    elif grep -q '!pollvote' <<< "$line"; then
+    elif grep -q '!pollvote ' <<< "$line"; then
         # Check if the poll is open
-        if [ -e "$poll_state_file" ]; then
+        if [ -e "$poll_open_state_file" ]; then
+            username=$(sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?\(.\+\) :  .\+/\3/' <<< "$line")
+
             # Check if the user has not voted yet
             if ! grep -q "$username" "$vote_file"; then
-                if [[ "$command_content" =~ ^y[A-Za-z0-9_-]+ ]]; then
-                    echo "${username}----yes" >> "$vote_file"
+                if [[ "$command_input" =~ ^y[a-zA-Z0-9_-]* ]]; then
+                    echo "${username}--SEP--yes" >> "$vote_file"
                     play_sound "yes" &
-                elif [[ "$command_content" =~ ^n[A-Za-z0-9_-]+ ]]; then
-                    echo "${username}----no" >> "$vote_file"
+                elif [[ "$command_input" =~ ^n[a-zA-Z0-9_-]* ]]; then
+                    echo "${username}--SEP--no" >> "$vote_file"
                     play_sound "no" &
                 fi
             fi
@@ -130,7 +149,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered -E ' :  !(poll|pollvote) ' |
+    grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !\(poll\|pollvote\) " |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
     # Keep messages only from whitelisted players
@@ -138,13 +157,13 @@ done < <(
     # Sanitize the message
     stdbuf -o0 sed 's/[$;`()]//g' |
     # Replace certain patterns
-    stdbuf -o0 sed  -e 's/btw/by the way/g' \
-                    -e 's/wtf/what the fuck/g' \
-                    -e 's/idk/i don'\''t know/g' |
-    # Remove non-ASCII and control characters
-    stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
+    stdbuf -o0 sed  -e 's/btw/by the way/gI' \
+                    -e 's/wtf/what the fuck/gI' \
+                    -e 's/idk/i don'\''t know/gI' |
     # Remove messages with blacklisted words
-    grep --line-buffered -v "$blacklisted_words" |
+    grep --line-buffered -iv "$blacklisted_words" |
     # Remove messages with excessive repetition
     grep --line-buffered -Ev '(.{2,})\1{5,}'
+    # Remove non-ASCII and control characters
+    stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]'
 )

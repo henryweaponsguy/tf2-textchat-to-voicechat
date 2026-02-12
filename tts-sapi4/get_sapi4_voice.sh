@@ -23,34 +23,32 @@ speak_text() {
     audio_file="$(mktemp /tmp/sapi4_voice-XXXXXXXXXX.wav)"
 
     # BonziBUDDY voice
-#     curl "${sapi4_server}/SAPI4/SAPI4?text=${encoded_text}\
-# &voice=Adult%20Male%20%232%2C%20American%20English%20(TruVoice)\
-# &pitch=140\
-# &speed=157" \
-#     --silent --show-error --output "${audio_file}"
+    #voice="Adult%20Male%20%232%2C%20American%20English%20(TruVoice)"
+    #pitch="140"
+    #speed="157"
 
     # Microsoft Sam voice
-#     curl "${sapi4_server}/SAPI4/SAPI4?text=${encoded_text}\
-# &voice=Sam\
-# &pitch=100\
-# &speed=150" \
-#     --silent --show-error --output "${audio_file}"
+    #voice="Sam"
+    #pitch="100"
+    #speed="150"
 
     # A random voice (with a random pitch and speed) from the 'voices' array
     voice=${voices[RANDOM % ${#voices[@]}]}
-    min_pitch="50"
 
     case "$voice" in
         "Mary") min_pitch="90" ;;
         "Mike") min_pitch="60" ;;
+        *) min_pitch="50" ;;
     esac
 
     pitch=$(( (RANDOM % 16) * 10 + ${min_pitch} ))
+    speed=$(( (RANDOM % 6) * 10 + 130 ))
+
 
     curl "${sapi4_server}/SAPI4/SAPI4?text=${encoded_text}\
 &voice=${voice}\
 &pitch=${pitch}\
-&speed=$(( (RANDOM % 6) * 10 + 130 ))" \
+&speed=${speed}" \
     --silent --show-error --output "${audio_file}"
 
     (
@@ -72,6 +70,6 @@ elif ! tty -s; then
 else
     echo "Usage:"
     echo "  $0 \"Your text here\"     # Speak a single line"
-    echo "  echo 'text' | $0           # Stream from a pipe"
+    echo "  echo 'text' | $0          # Stream from a pipe"
     exit 1
 fi
