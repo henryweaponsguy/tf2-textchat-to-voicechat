@@ -26,7 +26,7 @@ def speak_text(text):
         subprocess.run(
             ["paplay", "--client-name=espeak", audio_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
     finally:
         try:

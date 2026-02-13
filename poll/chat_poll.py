@@ -79,7 +79,7 @@ def play_sound(sound):
     subprocess.run(
         ["paplay", "--client-name=poll", f"{sound_dir}/{sound}.wav"],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
     )
 
 def speak_text(text):
@@ -95,7 +95,7 @@ def speak_text(text):
         subprocess.run(
             ["paplay", "--client-name=poll", audio_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
     finally:
         try:
@@ -202,5 +202,5 @@ with open(console_log, "r") as log:
                         Thread(
                             target=play_sound,
                             args=(vote,),
-                            daemon=True
+                            daemon=True,
                         ).start()

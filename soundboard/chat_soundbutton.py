@@ -41,7 +41,7 @@ def play_sound(sound):
     subprocess.run(
         ["paplay", "--client-name=soundbutton", sound],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
     )
 
 
@@ -81,5 +81,5 @@ with open(console_log, "r") as log:
             Thread(
                 target=play_sound,
                 args=(selected_file,),
-                daemon=True
+                daemon=True,
             ).start()

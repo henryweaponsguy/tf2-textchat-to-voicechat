@@ -18,6 +18,7 @@ services:
     devices:
       - /dev/snd:/dev/snd
     restart: unless-stopped
+    network_mode: none
     security_opt:
       - "no-new-privileges=true"
     cap_drop:

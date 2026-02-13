@@ -76,7 +76,7 @@ def speak_text(text):
         subprocess.run(
             ["paplay", "--client-name=sapi4", audio_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
     finally:
         try:

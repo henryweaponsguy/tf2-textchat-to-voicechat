@@ -89,8 +89,6 @@ with open(console_log, "r") as log:
         line = re_command.match(line).group(5)
         # Replace certain patterns
         line = replace_patterns(line)
-        # Convert the message to lowercase
-        line = line.lower()
         # Remove messages with blacklisted words
         if re_blacklisted_words.search(line):
             continue
@@ -110,5 +108,5 @@ with open(console_log, "r") as log:
         Thread(
             target=speak_text,
             args=(line,),
-            daemon=True
+            daemon=True,
         ).start()

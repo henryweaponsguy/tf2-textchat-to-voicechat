@@ -101,7 +101,7 @@ def speak_text(text):
         announcer_process = subprocess.Popen(
             ["paplay", "--client-name=radio-announcer", audio_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         announcer_process.wait()
         announcer_process = None
@@ -129,7 +129,7 @@ def download_and_queue(video_id):
                 "--skip-download",
                "--no-warnings",
                 "--print-json",
-                video_id
+                video_id,
             ],
             capture_output=True,
             text=True
@@ -157,7 +157,7 @@ def download_and_queue(video_id):
                 "--output", f"{queue_dir}/%(title)s ({video_id}).%(ext)s",
                 "--no-playlist",
                 "--quiet",
-                video_id
+                video_id,
             ]
         )
 
@@ -179,7 +179,7 @@ def download_and_queue(video_id):
             "-af", "loudnorm=I=-23:TP=-1.0:LRA=11",
             "-ac", "1",
             "-ar", "24000",
-            str(temp_file)
+            str(temp_file),
         ])
 
         temp_file.replace(audio_file)
@@ -244,7 +244,7 @@ def play_queue():
                 radio_process = subprocess.Popen(
                     ["paplay", "--client-name=radio", audio_file],
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
+                    stderr=subprocess.DEVNULL,
                 )
                 radio_process.wait()
 
@@ -281,7 +281,7 @@ def start_queue():
 
 queue_thread = Thread(
     target=start_queue,
-    daemon=True
+    daemon=True,
 )
 queue_thread.start()
 
@@ -327,7 +327,7 @@ with open(console_log, "r") as log:
             Thread(
                 target=download_and_queue,
                 args=(video_url.group(4),),
-                daemon=True
+                daemon=True,
             ).start()
         # Vote to skip the currently playing file
         elif selected_command == "skip" and skip_voting_open:
@@ -345,20 +345,20 @@ with open(console_log, "r") as log:
                     Thread(
                         target=speak_text,
                         args=(f"{remaining_skip_vote_count} votes remaining.",),
-                        daemon=True
+                        daemon=True,
                     ).start()
                 elif remaining_skip_vote_count == 1:
                     Thread(
                         target=speak_text,
                         args=("1 vote remaining.",),
-                        daemon=True
+                        daemon=True,
                     ).start()
                 # Skip the currently playing file if the required number of skip votes has been reached
                 else:
                     Thread(
                         target=speak_text,
                         args=("Skipping the file.",),
-                        daemon=True
+                        daemon=True,
                     ).start()
 
                     print("Skipping the file...")

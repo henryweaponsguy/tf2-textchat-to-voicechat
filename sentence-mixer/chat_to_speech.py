@@ -1,19 +1,24 @@
-import random
 import re
 import signal
-import subprocess
 import sys
 import time
-from threading import Thread
 from pathlib import Path
+from threading import Thread
+from get_sentencemixed_voice import speak_text
+
+def exit_cleanup(signum, frame):
+    for file in Path("/tmp").glob("sentencemixed_voice-*.wav"):
+        try:
+            file.unlink()
+        except FileNotFoundError:
+            pass
+
+    sys.exit(0)
 
 # Exit cleanly on CTRL+C and system shutdown
-signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
-signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
+signal.signal(signal.SIGINT, exit_cleanup)
+signal.signal(signal.SIGTERM, exit_cleanup)
 
-
-# Soundboard sounds directory
-sound_dir="/tts/sounds"
 
 # Add '-condebug' as TF2's launch parameter.
 # Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
@@ -38,21 +43,24 @@ blacklisted_words = r"$^"
 
 previous_line = None
 
-#re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  !(play) (.+)")
-re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  (.+)")
-#re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
-re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  ")
-#re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
-re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  ")
+re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  !(mix) (.+)")
+re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
+re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
 re_blacklisted_words = re.compile(rf"{blacklisted_words}", re.IGNORECASE)
+re_repetition = re.compile(r"(.{2,})\1{5,}")
 re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 
-def play_sound(sound):
-    subprocess.run(
-        ["paplay", "--client-name=soundboard", sound],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+replacements = [
+    (re.compile(r"btw", re.IGNORECASE), "by the way"),
+    (re.compile(r"wtf", re.IGNORECASE), "what the fuck"),
+    (re.compile(r"idk", re.IGNORECASE), "i don't know"),
+]
+
+def replace_patterns(text):
+    for pattern, replacement in replacements:
+        text = pattern.sub(replacement, text)
+
+    return text
 
 
 with open(console_log, "r") as log:
@@ -78,12 +86,16 @@ with open(console_log, "r") as log:
         if not re_whitelisted_names.search(line):
             continue
         # Extract the message
-        #line = re_command.match(line).group(5)
-        line = re_command.match(line).group(4)
+        line = re_command.match(line).group(5)
+        # Replace certain patterns
+        line = replace_patterns(line)
         # Convert the message to lowercase
         line = line.lower()
         # Remove messages with blacklisted words
         if re_blacklisted_words.search(line):
+            continue
+        # Remove messages with excessive repetition
+        if re_repetition.search(line):
             continue
         # Remove non-ASCII and control characters
         line = re_allowed_characters.sub("", line)
@@ -95,17 +107,8 @@ with open(console_log, "r") as log:
         #previous_line = line
 
 
-        # Match files
-        matched_files = (
-            list(Path(sound_dir).glob(f"{line}.*")) +
-            list(Path(sound_dir).glob(f"{line} [0-9]*.*"))
-        )
-
-        if matched_files:
-            selected_file = str(random.choice(matched_files))
-
-            Thread(
-                target=play_sound,
-                args=(selected_file,),
-                daemon=True,
-            ).start()
+        Thread(
+            target=speak_text,
+            args=(line,),
+            daemon=True,
+        ).start()

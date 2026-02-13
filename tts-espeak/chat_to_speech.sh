@@ -43,6 +43,8 @@ grep --line-buffered -iv "$blacklisted_words" |
 grep --line-buffered -Ev '(.{2,})\1{5,}' |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
+# Trim and normalize whitespace
+stdbuf -o0 sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Speak the result aloud
