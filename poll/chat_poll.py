@@ -2,12 +2,13 @@ import re
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from threading import Thread
 
 def exit_cleanup(signum, frame):
-    for file in Path("/tmp").glob("dectalk_voice-*.wav"):
+    for file in Path(tempfile.gettempdir()).glob("dectalk_voice-*.wav"):
         try:
             file.unlink()
         except FileNotFoundError:

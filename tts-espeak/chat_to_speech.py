@@ -1,13 +1,14 @@
 import re
 import signal
 import sys
+import tempfile
 import time
 from pathlib import Path
 from threading import Thread
 from get_espeak_voice import speak_text
 
 def exit_cleanup(signum, frame):
-    for file in Path("/tmp").glob("espeak_voice-*.wav"):
+    for file in Path(tempfile.gettempdir()).glob("espeak_voice-*.wav"):
         try:
             file.unlink()
         except FileNotFoundError:

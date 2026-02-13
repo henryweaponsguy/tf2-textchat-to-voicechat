@@ -13,7 +13,7 @@ def exit_cleanup(signum, frame):
         if process and process.poll() is None:
             process.terminate()
 
-    for file in Path("/tmp").glob(f"dectalk_voice-*.wav"):
+    for file in Path(tempfile.gettempdir()).glob("dectalk_voice-*.wav"):
         try:
             file.unlink()
         except FileNotFoundError:
