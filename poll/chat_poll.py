@@ -24,29 +24,29 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 # Poll sounds directory
 sound_dir = "/tts/sounds"
 
-# Add '-condebug' as TF2's launch parameter.
-# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
+# Add '-condebug' to TF2's launch parameters.
+# Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = "/tts/console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-# Default: "$^"
+# Empty: "$^"
 blacklisted_names = r"$^"
 
 # Alternatively, a whitelist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-# Default: ".*"
+# Empty: ".*"
 whitelisted_names = r".*"
 
 # Word blacklist:
 # Example: "nominate|rtv|nextmap"
-# Default: "$^"
+# Empty: "$^"
 blacklisted_words = r"$^"
 
 # Whitelist for creating a poll:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-# Default: ".*"
+# Empty: ".*"
 whitelisted_poll_names = r".*"
 
 

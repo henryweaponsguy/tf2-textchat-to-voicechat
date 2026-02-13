@@ -24,6 +24,8 @@ This repo contains a couple text chat to voice chat scripts for TF2. These scrip
 
 ### How to run
 
+Add `-condebug` to TF2's launch parameters. Alternatively, add `con_logfile <logfile location>` to TF2's autoexec.cfg, e.g. `con_logfile console.log`
+
 Build and run the container: `export UID=$(id -u); docker compose up -d`
 
 Enter the container: `docker exec -it <container name, e.g. tf2-dectalk> bash`
@@ -38,7 +40,7 @@ Stop the container: `docker compose down`
 
 #### Toggleable voice chat with voice loopback (so you can hear your music)
 
-Add this to your `autoexec.cfg`:
+Add this to TF2's `autoexec.cfg`:
 
 ```
 alias voice_toggle "voice_on"

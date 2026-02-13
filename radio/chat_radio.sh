@@ -45,24 +45,24 @@ touch "$skip_vote_file"
 touch "$recently_played_history_file"
 
 
-# Add '-condebug' as TF2's launch parameter.
-# Alternatively, add "con_logfile <logfile location>" to autoexec.cfg
+# Add '-condebug' to TF2's launch parameters.
+# Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="/tts/console.log"
 
 # User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-# Default: "$^"
+# Empty: "$^"
 blacklisted_names="$^"
 
 # Alternatively, a whitelist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-# Default: ".*"
+# Empty: ".*"
 whitelisted_names=".*"
 
 # Word blacklist:
 # Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
-# Default: "$^"
+# Empty: "$^"
 blacklisted_words="$^"
 
 speak_text() {
