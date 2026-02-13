@@ -361,5 +361,5 @@ with open(console_log, "r") as log:
                         daemon=True,
                     ).start()
 
-                    print("Skipping the file...")
+                    print("Skipping the file.")
                     skip_current()
