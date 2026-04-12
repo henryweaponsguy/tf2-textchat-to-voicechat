@@ -25,11 +25,11 @@ whitelisted_names=".*"
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
 # Search for lines containing the command
-grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !play" |
+grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !play" |
 # Remove messages from blacklisted players
-grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
 # Keep messages only from whitelisted players
-grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
+grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
 # Remove duplicate messages
 #stdbuf -o0 uniq |
 # Play the audio file

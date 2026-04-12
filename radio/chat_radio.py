@@ -71,9 +71,9 @@ skip_voting_open = False
 
 skip_vote_list = {}
 
-re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  !(queue|skip)( .+)?")
-re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
-re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
+re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip)( .+)?")
+re_blacklisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
+re_whitelisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
 re_blacklisted_words = re.compile(rf"{blacklisted_words}", re.IGNORECASE)
 re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 re_allowed_filename_characters = re.compile(r"[^A-Za-z0-9\s'-_]")

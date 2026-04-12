@@ -245,7 +245,7 @@ while IFS= read -r line; do
     elif grep -q '!skip' <<< "$line"; then
         # Check if there is a file playing
         if [ -e "$skip_voting_open_state_file" ]; then
-            username=$(sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/' <<< "$line")
+            username=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/' <<< "$line")
 
             # Check if the user has not voted yet
             if ! grep -q "$username" "$skip_vote_file"; then
@@ -273,11 +273,11 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue \|skip\)" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue \|skip\)" |
     # Remove messages from blacklisted players
-    grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+    grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
     # Keep messages only from whitelisted players
-    grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
     # Sanitize the message
     stdbuf -o0 sed 's/[$;`()]//g' |
     # Remove messages with blacklisted words

@@ -57,9 +57,9 @@ poll_open = False
 
 vote_list = {}
 
-re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  !(poll|pollvote) (.+)")
-re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
-re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
+re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(poll|pollvote) (.+)")
+re_blacklisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
+re_whitelisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
 re_whitelisted_poll_names = re.compile(rf"{whitelisted_poll_names}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")

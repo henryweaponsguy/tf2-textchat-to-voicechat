@@ -123,7 +123,7 @@ start_poll() {
 
 
 while IFS= read -r line; do
-    command_input=$(sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  ![a-zA-Z0-9_]\+ *//' <<< "$line")
+    command_input=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  ![a-zA-Z0-9_]\+ *//' <<< "$line")
 
     if grep -q '!poll ' <<< "$line" && grep -q "$whitelisted_poll_names" <<< "$line"; then
         # Check if the poll is running
@@ -134,7 +134,7 @@ while IFS= read -r line; do
     elif grep -q '!pollvote ' <<< "$line"; then
         # Check if the poll is open
         if [ -e "$poll_open_state_file" ]; then
-            username=$(sed 's/^\(\*DEAD\*\)\?\((TEAM)\)\? \?\(.\+\) :  .\+/\3/' <<< "$line")
+            username=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\(.\+\) :  .\+/\3/' <<< "$line")
 
             # Check if the user has not voted yet
             if ! grep -q "$username" "$vote_file"; then
@@ -152,11 +152,11 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?.\+ :  !\(poll\|pollvote\) " |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(poll\|pollvote\) " |
     # Remove messages from blacklisted players
-    grep --line-buffered -v "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
+    grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names} :  !" |
     # Keep messages only from whitelisted players
-    grep --line-buffered "^\(\*DEAD\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names} :  !" |
     # Sanitize the message
     stdbuf -o0 sed 's/[$;`()]//g' |
     # Replace certain patterns

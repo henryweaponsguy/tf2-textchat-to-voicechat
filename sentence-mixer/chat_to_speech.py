@@ -46,9 +46,9 @@ blacklisted_words = r"$^"
 
 previous_line = None
 
-re_command = re.compile(r"^(\*DEAD\*)?(\(TEAM\))? ?(.+) :  !mix (.+)")
-re_blacklisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
-re_whitelisted_names = re.compile(rf"^(\*DEAD\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
+re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !mix (.+)")
+re_blacklisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names}) :  !")
+re_whitelisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names}) :  !")
 re_blacklisted_words = re.compile(rf"{blacklisted_words}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
 re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:,.<>/?\\|`~]")
