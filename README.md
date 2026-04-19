@@ -69,7 +69,7 @@ Additionally, while you are in the Voice Settings, set `Voice Input Device` to y
 
 #### Helpful scripts
 
-`scripts/clean_console_log.sh` - truncates the `console.log` file in TF2's directory
+`scripts/clear_console_log.sh` - truncates the `console.log` file in TF2's directory
 
 `scripts/compress_soundpack.sh` - compresses a specified directory and creates a text file with its contents
 
