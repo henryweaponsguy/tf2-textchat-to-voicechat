@@ -45,7 +45,7 @@ stdbuf -o0 sed  -e 's/btw/by the way/gI' \
 # Remove messages with blacklisted words
 grep --line-buffered -iv "$blacklisted_words" |
 # Remove messages with excessive repetition
-grep --line-buffered -Ev '(.{2,})\1{5,}' |
+grep --line-buffered -Pv '(.{2,})\1{5,}' |
 # Remove non-ASCII and control characters
 stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
 # Trim and normalize whitespace

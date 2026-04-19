@@ -31,6 +31,6 @@ RUN rm -rf /tmp/dectalk
 RUN python3 -m venv venv
 RUN venv/bin/pip install yt-dlp
 RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
-
+ENV PATH="/tts/venv/bin:${PATH}"
 
 CMD ["tail", "-f", "/dev/null"]
