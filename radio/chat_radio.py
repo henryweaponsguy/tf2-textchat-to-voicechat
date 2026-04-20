@@ -115,7 +115,6 @@ def speak_text(text):
             pass
 
 def download_and_queue(video_id, username):
-    print(f"Downloading: {video_id} Queued by: {username}")
     print(f"{'Downloading:':<25}{video_id:<25}{'Queued by:':<25}{username}")
 
     audio_format="opus"
