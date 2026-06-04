@@ -202,14 +202,7 @@ download_and_queue() {
                     -loglevel info \
                     -i "$audio_file" \
                     -filter:a \
-                        "silenceremove=\
-                        start_periods=1:\
-                        start_threshold=-50dB:\
-                        start_silence=1:\
-                        stop_periods=1:\
-                        stop_threshold=-50dB:\
-                        stop_silence=1,\
-                        loudnorm=\
+                        "loudnorm=\
                         I=${lufs}:\
                         TP=${tolerance}:\
                         LRA=${loudness_range}:\
@@ -227,14 +220,7 @@ download_and_queue() {
                     -loglevel error \
                     -i "$audio_file" \
                     -filter:a \
-                        "silenceremove=\
-                        start_periods=1:\
-                        start_threshold=-50dB:\
-                        start_silence=1:\
-                        stop_periods=1:\
-                        stop_threshold=-50dB:\
-                        stop_silence=1,\
-                        loudnorm=\
+                        "loudnorm=\
                         I=${lufs}:\
                         TP=${tolerance}:\
                         LRA=${loudness_range}:\

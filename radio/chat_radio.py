@@ -300,13 +300,6 @@ def download_and_queue(video_id, username):
                     str(audio_file),
                     "-filter:a",
                     (
-                        "silenceremove="
-                        "start_periods=1:"
-                        "start_threshold=-50dB:"
-                        "start_silence=1:"
-                        "stop_periods=1:"
-                        "stop_threshold=-50dB:"
-                        "stop_silence=1,"
                         "loudnorm="
                         f"I={lufs}:"
                         f"TP={tolerance}:"
@@ -342,13 +335,6 @@ def download_and_queue(video_id, username):
                         str(audio_file),
                         "-filter:a",
                         (
-                            "silenceremove="
-                            "start_periods=1:"
-                            "start_threshold=-50dB:"
-                            "start_silence=1:"
-                            "stop_periods=1:"
-                            "stop_threshold=-50dB:"
-                            "stop_silence=1,"
                             "loudnorm="
                             f"I={lufs}:"
                             f"TP={tolerance}:"
