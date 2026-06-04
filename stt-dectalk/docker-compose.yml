@@ -1,0 +1,20 @@
+services:
+  stt-dectalk:
+    image: stt-dectalk:latest
+    build: .
+    container_name: stt-dectalk
+    environment:
+      PULSE_SERVER: unix:/run/user/${UID}/pulse/native
+    volumes:
+      - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
+      - ./stt_to_speech.py:/tts/stt_to_speech.py:ro
+      - ./models:/tts/models:ro
+    devices:
+      - /dev/snd
+    network_mode: none
+    security_opt:
+      - "no-new-privileges=true"
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp

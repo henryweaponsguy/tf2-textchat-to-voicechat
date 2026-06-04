@@ -1,0 +1,21 @@
+services:
+  stt-soundboard:
+    image: stt-soundboard:latest
+    build: .
+    container_name: stt-soundboard
+    environment:
+      PULSE_SERVER: unix:/run/user/${UID}/pulse/native
+    volumes:
+      - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
+      - ./stt_soundboard.py:/tts/stt_soundboard.py:ro
+      - ./models:/tts/models:ro
+      - ./sounds:/tts/sounds:ro
+    devices:
+      - /dev/snd
+    network_mode: none
+    security_opt:
+      - "no-new-privileges=true"
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp

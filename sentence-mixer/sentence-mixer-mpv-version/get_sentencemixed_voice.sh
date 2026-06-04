@@ -1,0 +1,180 @@
+#!/bin/bash
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+
+word_list="/tmp/word_list.m3u"
+voices_dir="${script_dir}/voices"
+
+mix_sentences() {
+    read -r -a words <<< "$text"
+
+    for i in "${!words[@]}"; do
+        # Convert numbers to words
+        if [[ "${words[i]}" =~ ^-?[0-9]+(st|nd|rd|th)?$ ]]; then
+            words[i]=$("${script_dir}/convert_numbers_to_words.sh" "${words[i]}")
+        fi
+    done
+
+    # Check if a custom dictionary is available
+    custom_dictionary="${sound_dir}/_dictionary.sed"
+    if [ -e "$custom_dictionary" ]; then
+        # Replace synonyms and unavailable forms of words with existing words
+        read -r -a words <<< "$(sed -Ef "$custom_dictionary" <<< "${words[*]}")"
+
+        for word in "${words[@]}"; do
+            selected_file=""
+
+            shopt -s nullglob
+            matched_files=(
+                # Check for unnumbered and numbered variants
+                "${sound_dir}/${word}".wav*
+                "${sound_dir}/${word} "[0-9]*.wav
+            )
+            shopt -u nullglob
+
+            if [[ ${#matched_files[@]} -gt 0 ]]; then
+                selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+            else
+                # If a corresponding file does not exist, use a placeholder file
+                shopt -s nullglob
+                matched_files=(
+                    "$sound_dir/_placeholder".wav*
+                    "$sound_dir/_placeholder "[0-9]*.wav
+                )
+                shopt -u nullglob
+
+                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                    selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+                fi
+            fi
+
+            echo "$selected_file"
+        done > "$word_list"
+    else
+        read -r -a words <<< "$(sed -E \
+            -e "s/_/ /g" \
+            -e "s/[,;]/ _comma /g" \
+            -e "s/-([^0-9])/ _comma \1/g" \
+            -e "s/[\.!\?]/ _period /g" \
+            -e "s/[&\+]/ and /g" \
+            -e "s/\=/ equals /g" \
+            -e "s/@/ at /g" \
+            -e "s/#/ number /g" \
+            -e "s/%/ percent /g" \
+            -e "s/0/ zero /g" \
+            -e "s/1/ one /g" \
+            -e "s/2/ two /g" \
+            -e "s/3/ three /g" \
+            -e "s/4/ four /g" \
+            -e "s/5/ five /g" \
+            -e "s/6/ six /g" \
+            -e "s/7/ seven /g" \
+            -e "s/8/ eight /g" \
+            -e "s/9/ nine /g" \
+        <<< "${words[*]}")"
+
+        for word in "${words[@]}"; do
+            selected_file=""
+
+            # If the exact corresponding file exists.
+            # Variants array is used so variant-matching goes through the variants
+            # in a specific order instead of randomly selecting an existing variant.
+            # This prevents returning 'apples' when 'apple' is requested
+            variants=( "$word" )
+            base_words=( "$word" )
+
+            # If a corresponding file exists, but only in the infinitive form.
+            # Infinitive is handled separately, only for words with specific suffixes.
+            # This prevents returning 'app' when 'apple' is requested
+            base=""
+
+            # Checking each suffix separately as suffixes need to be checked in a specific order.
+            # This prevents returning 'cooke' instead of 'cook' when 'cooked' is requested
+            if [[ "$word" =~ (.*)(ing)$ ]]; then
+                base="${BASH_REMATCH[1]}"
+            elif [[ "$word" =~ (.*)(e[sd])$ ]]; then
+                base="${BASH_REMATCH[1]}"
+            elif [[ "$word" =~ (.*)([esd]|\'s)$ ]]; then
+                base="${BASH_REMATCH[1]}"
+            fi
+
+            if [ -n "$base" ]; then
+                variants+=( "$base" )
+                base_words+=( "$base" )
+            fi
+
+            # If a corresponding file exists, but only in a different form
+            suffixes=( "'s" "e" "s" "es" "d" "ed" "ing" )
+
+            # Create the variants in a specifc order
+            for base_word in "${base_words[@]}"; do
+                for suffix in "${suffixes[@]}"; do
+                    variants+=( "${base_word}${suffix}" )
+                done
+            done
+
+            for variant in "${variants[@]}"; do
+                shopt -s nullglob
+                matched_files=(
+                    # Check for unnumbered and numbered variants
+                    "${sound_dir}/${variant}".wav*
+                    "${sound_dir}/${variant} "[0-9]*.wav
+                )
+                shopt -u nullglob
+
+                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                    selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+                    break
+                fi
+            done
+
+            # If a corresponding file does not exist, use a placeholder file
+            if [[ -z "$selected_file" ]]; then
+                shopt -s nullglob
+                matched_files=(
+                    "$sound_dir/_placeholder".wav*
+                    "$sound_dir/_placeholder "[0-9]*.wav
+                )
+                shopt -u nullglob
+
+                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                    selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+                fi
+            fi
+
+            echo "$selected_file"
+        done > "$word_list"
+    fi
+}
+
+
+speak_text() {
+    read -r voice text <<<"$1"
+
+    sound_dir="${voices_dir}/${voice}"
+    [[ -d "$sound_dir" && -n "$text" ]] || return
+
+    mix_sentences
+
+    (
+        mpv --audio-device=pulse/virtual_speaker --no-video --gapless-audio=yes --really-quiet "$word_list" >/dev/null 2>&1
+    ) &
+}
+
+
+# Determine mode
+if [ -n "$1" ]; then
+    # Command-line mode
+    speak_text "$*"
+elif ! tty -s; then
+    # Streaming mode
+    while IFS= read -r line; do
+        speak_text "$line"
+    done
+else
+    echo "Usage:"
+    echo "  $0 \"Your text here\"     # Speak a single line"
+    echo "  echo 'text' | $0           # Stream from a pipe"
+    exit 1
+fi

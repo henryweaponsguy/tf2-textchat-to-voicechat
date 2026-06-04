@@ -1,0 +1,84 @@
+import re
+import signal
+import sys
+import tempfile
+import time
+from pathlib import Path
+from threading import Thread
+
+from get_timer import start_timer
+
+script_dir = Path(__file__).resolve().parent
+
+
+def exit_cleanup(signum, frame):
+    for file in [timer_running_state_file, timer_socket]:
+        try:
+            file.unlink()
+        except FileNotFoundError:
+            pass
+
+    sys.exit(0)
+
+
+# Exit cleanly on CTRL+C and system shutdown
+signal.signal(signal.SIGINT, exit_cleanup)
+signal.signal(signal.SIGTERM, exit_cleanup)
+
+
+timer_running_state_file = Path(tempfile.gettempdir()) / "timer.running"
+timer_socket = Path(tempfile.gettempdir()) / "timer.socket"
+
+
+# Add '-condebug' to TF2's launch parameters.
+# Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
+# e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
+console_log = script_dir / "console.log"
+
+# User blacklist:
+# Example: "John|pablo.gonzales.2007|Engineer Gaming"
+blacklisted_names = ""
+
+# Alternatively, a whitelist:
+whitelisted_names = ""
+
+
+re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !timer (\d+)")
+re_blacklisted_names = re.compile(
+    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
+)
+re_whitelisted_names = re.compile(
+    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
+)
+
+
+with open(console_log, "r") as log:
+    # Jump to the end of the file
+    log.seek(0, 2)
+
+    # Continuously read the last line of the log as it is updated
+    while True:
+        line = log.readline()
+        if not line:
+            time.sleep(0.1)
+            continue
+
+        # Remove the trailing newline
+        line = line.rstrip("\n")
+        # Search for lines containing the command
+        if not re_command.search(line):
+            continue
+        # Remove messages from blacklisted players
+        if re_blacklisted_names.search(line):
+            continue
+        # Keep messages only from whitelisted players
+        if not re_whitelisted_names.search(line):
+            continue
+        # Extract the duration
+        line = re_command.match(line).group(4)
+
+        Thread(
+            target=start_timer,
+            args=(line,),
+            daemon=True,
+        ).start()
