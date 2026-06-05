@@ -147,7 +147,6 @@ done < <(
     # Replace certain patterns
     stdbuf -o0 sed  -e 's/btw/by the way/gI' \
                     -e 's/wtf/what the fuck/gI' \
-                    -e 's/( ͡° ͜ʖ ͡°)/lenny face/gI' \
                     -e 's/idk/i don'\''t know/gI' |
     # Remove messages with blacklisted words
     grep --line-buffered -iv "${blacklisted_words:-$^}" |
