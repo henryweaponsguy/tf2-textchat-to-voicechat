@@ -116,6 +116,7 @@ elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
         start_timer "$line" &
+        echo $! > "$timer_pid_file"
     done
 else
     echo "Usage:"

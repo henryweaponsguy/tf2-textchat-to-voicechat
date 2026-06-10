@@ -262,9 +262,6 @@ download_and_queue() {
 
 play_queue() {
     while [[ -s "$queue_file" ]]; do
-        # Clear skip votes
-        > "$skip_vote_file"
-
         local audio_file=$(head -n 1 "$queue_file")
 
         # Remove the current file from the queue file
@@ -283,6 +280,9 @@ play_queue() {
             file_title=$(echo "$file_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
             speak_text "Now playing: $file_title."
+
+            # Clear skip votes
+            > "$skip_vote_file"
 
             touch "$skip_voting_open_state_file"
 

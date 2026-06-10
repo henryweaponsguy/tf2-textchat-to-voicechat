@@ -3,8 +3,26 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
+exit_cleanup() {
+    if [ -f "$mpv_pid_file" ]; then
+        while IFS= read -r mpv_pid; do
+            if [ -n "$mpv_pid" ]; then
+                kill "$mpv_pid" 2>/dev/null
+                wait "$mpv_pid" 2>/dev/null
+            fi
+        done < "$mpv_pid_file"
+
+        rm "$mpv_pid_file"
+    fi
+}
+
+# Exit cleanly on CTRL+C and system shutdown
+trap exit_cleanup SIGINT SIGTERM EXIT
+
+
 word_list="/tmp/word_list.m3u"
 voices_dir="${script_dir}/voices"
+mpv_pid_file="/tmp/mpv.pid"
 
 mix_sentences() {
     read -r -a words <<< "$text"
@@ -157,9 +175,8 @@ speak_text() {
 
     mix_sentences
 
-    (
-        mpv --audio-device=pulse/virtual_speaker --no-video --gapless-audio=yes --really-quiet "$word_list" >/dev/null 2>&1
-    ) &
+    mpv --audio-device=pulse/virtual_speaker --no-video --gapless-audio=yes --really-quiet "$word_list" >/dev/null 2>&1 &
+    echo $! >> "$mpv_pid_file"
 }
 
 
@@ -167,11 +184,13 @@ speak_text() {
 if [ -n "$1" ]; then
     # Command-line mode
     speak_text "$*"
+    wait
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
         speak_text "$line"
     done
+    wait
 else
     echo "Usage:"
     echo "  $0 \"Your text here\"     # Speak a single line"

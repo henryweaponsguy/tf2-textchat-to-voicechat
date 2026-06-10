@@ -386,8 +386,6 @@ def download_and_queue(video_id, username):
 
 def play_queue():
     while queue_file.exists() and queue_file.stat().st_size > 0:
-        # Clear skip votes
-        skip_vote_list.clear()
 
         queued_files = queue_file.read_text().splitlines()
         if queued_files:
@@ -409,6 +407,9 @@ def play_queue():
                 file_title = re_allowed_filename_characters.sub("", file_title)
 
                 speak_text(f"Now playing: {file_title}.")
+
+                # Clear skip votes
+                skip_vote_list.clear()
 
                 # Play the file
                 global radio_process
