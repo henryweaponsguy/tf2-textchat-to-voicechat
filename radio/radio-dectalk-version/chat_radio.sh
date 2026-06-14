@@ -32,7 +32,6 @@ exit_cleanup() {
 trap exit_cleanup SIGINT SIGTERM EXIT
 
 
-piper_server="http://localhost:5000"
 announcer_pid_file="/tmp/announcer.pid"
 downloader_pid_file="/tmp/downloader.pid"
 paplay_pid_file="/tmp/paplay.pid"
@@ -73,22 +72,11 @@ speak_text() {
         kill "$announcer_pid" 2>/dev/null
     fi
 
-    local audio_file="$(mktemp /tmp/piper_voice-XXXXXXXXXX.wav)"
+    local audio_file="$(mktemp /tmp/dectalk_voice-XXXXXXXXXX.wav)"
 
-    data="$(
-cat <<EOF
-{
-    "text": "$text",
-    "voice": "en_US-joe-medium",
-    "length_scale": "1"
-}
-EOF
-)"
+    say -pre "[:name HARRY]" -e 1 -a "$text" -fo "$audio_file"
 
-    curl -X POST -H "Content-Type: application/json" --data "$data" \
-    --silent --show-error --output "$audio_file" "$piper_server"
-
-    paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1 &
+    paplay --device=virtual_speaker --client-name=dectalk "$audio_file" >/dev/null 2>&1 &
     local announcer_pid=$!
     echo "$announcer_pid" > "$announcer_pid_file"
     wait "$announcer_pid"

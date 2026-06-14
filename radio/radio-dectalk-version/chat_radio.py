@@ -5,7 +5,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 from threading import Thread
 
@@ -103,24 +102,14 @@ def speak_text(text):
         return
 
     with tempfile.NamedTemporaryFile(
-        prefix="piper_voice-", suffix=".wav", delete=False
+        prefix="dectalk_voice-", suffix=".wav", delete=False
     ) as tmp:
         audio_file = tmp.name
 
     try:
-        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": "1"}
-
-        post_request = urllib.request.Request(
-            piper_server,
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
+        subprocess.run(
+            ["say", "-pre", "[:name HARRY]", "-e", "1", "-a", text, "-fo", audio_file]
         )
-
-        with urllib.request.urlopen(post_request) as response, open(
-            audio_file, "wb"
-        ) as file:
-            file.write(response.read())
 
         # Stop the previous announcement
         global announcer_process
@@ -131,7 +120,7 @@ def speak_text(text):
             [
                 "paplay",
                 "--device=virtual_speaker",
-                "--client-name=piper",
+                "--client-name=dectalk",
                 audio_file,
             ],
             stdout=subprocess.DEVNULL,
@@ -385,7 +374,7 @@ def download_and_queue(video_id, username):
             file.write(f"{audio_file}\n")
         print(f"{'Queued:':<25}{audio_file}")
 
-        recently_played_history_length = 5
+        recently_played_history_length = -1
 
         # Add the file to the recently played files list
         recently_played_files.append(str(audio_file))

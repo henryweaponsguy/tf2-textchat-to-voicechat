@@ -79,7 +79,7 @@ EOF
     --silent --show-error --output "$audio_file" "$piper_server"
 
     (
-        paplay --client-name=piper "$audio_file" >/dev/null 2>&1
+        paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
         rm -f "$audio_file"
     ) &
 }

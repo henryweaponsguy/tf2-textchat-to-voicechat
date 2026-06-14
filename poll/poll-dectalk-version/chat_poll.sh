@@ -29,7 +29,6 @@ trap exit_cleanup SIGINT SIGTERM EXIT
 
 
 sound_dir="${script_dir}/sounds"
-piper_server="http://localhost:5000"
 vote_file="${script_dir}/votes.txt"
 poll_pid_file="/tmp/poll.pid"
 poll_open_state_file="/tmp/poll.open"
@@ -66,22 +65,11 @@ play_sound() {
 speak_text() {
     local text="$1"
 
-    local audio_file="$(mktemp /tmp/piper_voice-XXXXXXXXXX.wav)"
+    local audio_file="$(mktemp /tmp/dectalk_voice-XXXXXXXXXX.wav)"
 
-    data="$(
-cat <<EOF
-{
-    "text": "$text",
-    "voice": "en_US-joe-medium",
-    "length_scale": "1"
-}
-EOF
-)"
+    say -pre "[:name HARRY]" -e 1 -a "$text" -fo "$audio_file"
 
-    curl -X POST -H "Content-Type: application/json" --data "$data" \
-    --silent --show-error --output "$audio_file" "$piper_server"
-
-    paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
+    paplay --device=virtual_speaker --client-name=dectalk "$audio_file" >/dev/null 2>&1
     rm -f "$audio_file"
 }
 

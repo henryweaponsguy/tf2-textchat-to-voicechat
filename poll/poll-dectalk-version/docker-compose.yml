@@ -1,6 +1,6 @@
 services:
   tf2-poll:
-    image: tf2-tts-piper:latest
+    image: tf2-tts-dectalk:latest
     build: .
     container_name: tf2-poll
     environment:
@@ -12,12 +12,9 @@ services:
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
       - ./chat_poll.sh:/tts/chat_poll.sh:ro
-      - ./models:/tts/models:ro
       - ./sounds:/tts/sounds:ro
     devices:
       - /dev/snd
-    ports:
-      - "5000:5000"
     network_mode: none
     security_opt:
       - "no-new-privileges=true"

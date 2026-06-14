@@ -12,8 +12,11 @@ services:
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
       - ./chat_radio.sh:/tts/chat_radio.sh:ro
+      - ./models:/tts/models:ro
     devices:
       - /dev/snd
+    ports:
+      - "5000:5000"
     security_opt:
       - "no-new-privileges=true"
     cap_drop:

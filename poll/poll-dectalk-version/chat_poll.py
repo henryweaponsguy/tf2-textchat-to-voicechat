@@ -1,11 +1,9 @@
-import json
 import re
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 from threading import Thread
 
@@ -51,7 +49,6 @@ blacklisted_words = ""
 whitelisted_poll_names = ""
 
 
-piper_server = "http://localhost:5000"
 poll_thread = None
 poll_open = False
 
@@ -103,31 +100,21 @@ def speak_text(text):
     if not text:
         return
 
-    with tempfile.NamedTemporaryFile(
-        prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    file_descriptor, audio_file = tempfile.mkstemp(
+        prefix="dectalk_voice-", suffix=".wav"
+    )
+    os.close(file_descriptor)
 
     try:
-        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": "1"}
-
-        post_request = urllib.request.Request(
-            piper_server,
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
+        subprocess.run(
+            ["say", "-pre", "[:name HARRY]", "-e", "1", "-a", text, "-fo", audio_file]
         )
-
-        with urllib.request.urlopen(post_request) as response, open(
-            audio_file, "wb"
-        ) as file:
-            file.write(response.read())
 
         subprocess.run(
             [
                 "paplay",
                 "--device=virtual_speaker",
-                "--client-name=piper",
+                "--client-name=dectalk",
                 audio_file,
             ],
             stdout=subprocess.DEVNULL,
@@ -135,7 +122,7 @@ def speak_text(text):
         )
     finally:
         try:
-            Path(audio_file).unlink()
+            os.remove(audio_file)
         except FileNotFoundError:
             pass
 

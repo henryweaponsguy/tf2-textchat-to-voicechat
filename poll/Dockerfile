@@ -1,29 +1,21 @@
 FROM debian:latest
 
 RUN apt-get update && apt-get install -y \
-    autoconf \
-    automake \
-    build-essential \
-    git \
-    libpulse-dev \
+    bc \
+    curl \
     pulseaudio \
-    unzip \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
-
-
-WORKDIR /tmp
-
-RUN git clone --depth 1 https://github.com/dectalk/dectalk.git
-WORKDIR /tmp/dectalk/src
-RUN autoreconf -i && \
-    ./configure && \
-    make && \
-    make install
 
 
 WORKDIR /tts
 
-RUN rm -rf /tmp/dectalk
+RUN python3 -m venv venv
+RUN venv/bin/pip install \
+    piper-tts \
+    piper-tts[http]
+RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
+ENV PATH="/tts/venv/bin:${PATH}"
 
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python3", "-m", "piper.http_server", "--data-dir", "models/", "-m", "en_GB-alan-medium"]
