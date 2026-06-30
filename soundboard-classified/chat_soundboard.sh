@@ -26,8 +26,8 @@ blacklisted_words=""
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
 # Search for lines containing the command
-#grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: !play " |
-grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: " |
+#grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: !play " |
+grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: " |
 # Remove messages from blacklisted players
 #grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: !" |
 grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: " |
@@ -35,8 +35,8 @@ grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_na
 #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: !" |
 grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: " |
 # Extract the message
-#stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: ![a-zA-Z0-9_]\+ *//' |
-stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: *//' |
+#stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: ![a-zA-Z0-9_]\+ *//' |
+stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: *//' |
 # Convert the message to lowercase
 perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
 # Remove messages with blacklisted words

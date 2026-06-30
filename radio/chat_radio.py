@@ -60,8 +60,6 @@ whitelisted_names = ""
 blacklisted_words = ""
 
 
-previous_line = None
-
 queue_thread = None
 announcer_process = None
 radio_process = None
@@ -79,7 +77,6 @@ re_whitelisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
 )
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
-re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 re_allowed_filename_characters = re.compile(r"[^A-Za-z0-9\s'-_]")
 re_url = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
@@ -508,12 +505,6 @@ with open(console_log, "r") as log:
         # Remove messages with blacklisted words
         if re_blacklisted_words.search(line):
             continue
-        # Remove non-ASCII and control characters
-        line = re_allowed_characters.sub("", line)
-        # Remove duplicate messages
-        # if line == previous_line:
-        #    continue
-        # previous_line = line
 
         # Extract video urls, usernames, commands and command input
         matched_command = re_command.match(line)

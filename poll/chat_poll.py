@@ -58,7 +58,7 @@ poll_open = False
 vote_list = {}
 
 re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) : +!(startpoll|poll) (.+)"
+    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(startpoll|poll) (.+)"
 )
 re_blacklisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
@@ -69,7 +69,6 @@ re_whitelisted_names = re.compile(
 re_whitelisted_poll_names = re.compile(rf"{whitelisted_poll_names or '.*'}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
-re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 re_vote = re.compile(r"^[yn][a-z0-9_-]*", re.IGNORECASE)
 
 replacements = [
@@ -209,10 +208,6 @@ with open(console_log, "r") as log:
         # Remove messages with excessive repetition
         if re_repetition.search(line):
             continue
-        # Remove non-ASCII and control characters
-        line = re_allowed_characters.sub("", line)
-        # Trim and normalize whitespace
-        line = " ".join(line.split())
 
         # Extract usernames, commands and command input
         matched_command = re_command.match(line)
@@ -236,7 +231,7 @@ with open(console_log, "r") as log:
                     if re_vote.match(command_input):
                         if command_input.lower().startswith("y"):
                             vote = "yes"
-                        else:
+                        elif command_input.lower().startswith("n"):
                             vote = "no"
 
                         vote_list[username] = vote

@@ -84,7 +84,6 @@ re_whitelisted_names = re.compile(
 )
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
-re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 
 replacements = [
     (re.compile(r"btw", re.IGNORECASE), "by the way"),
@@ -130,10 +129,6 @@ with open(console_log, "r") as log:
         # Remove messages with excessive repetition
         if re_repetition.search(line):
             continue
-        # Remove non-ASCII and control characters
-        line = re_allowed_characters.sub("", line)
-        # Trim and normalize whitespace
-        line = " ".join(line.split())
         # Remove duplicate messages
         # if line == previous_line:
         #    continue

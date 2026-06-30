@@ -341,7 +341,7 @@ echo $! > "$queue_pid_file"
 
 
 while IFS= read -r line; do
-    username=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/' <<< "$line")
+    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
 
     # Extract YouTube URLs
     if grep -q '!queue' <<< "$line" && \
@@ -384,9 +384,5 @@ done < <(
     # Keep messages only from whitelisted players
     grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  !" |
     # Remove messages with blacklisted words
-    grep --line-buffered -v "${blacklisted_words:-$^}" |
-    # Remove non-ASCII and control characters
-    stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]'
-    # Remove duplicate messages
-    #| stdbuf -o0 uniq
+    grep --line-buffered -v "${blacklisted_words:-$^}"
 )

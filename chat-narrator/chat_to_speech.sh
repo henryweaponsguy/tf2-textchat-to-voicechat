@@ -34,7 +34,7 @@ console_log="${script_dir}/console.log"
 
 # User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-blacklisted_names=""
+blacklisted_names="Henry"
 
 # Alternatively, a whitelist:
 whitelisted_names=""
@@ -45,9 +45,9 @@ blacklisted_words=""
 
 
 while IFS= read -r line; do
-    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\(.\+\) : .\+/\3/p' <<< "$line")
-    #text=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ : ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
-    text=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ : \(.\+\)/\3/p' <<< "$line")
+    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
+    #text=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
+    text=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
 
     [[ -z "$text" ]] && continue
 
@@ -136,8 +136,8 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !pip" |
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  " |
+    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  !pip" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  " |
     # Remove messages from blacklisted players
     #grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  " |
@@ -151,11 +151,7 @@ done < <(
     # Remove messages with blacklisted words
     grep --line-buffered -iv "${blacklisted_words:-$^}" |
     # Remove messages with excessive repetition
-    grep --line-buffered -Pv '(.{2,})\1{5,}' |
-    # Remove non-ASCII and control characters
-    stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-    # Trim and normalize whitespace
-    stdbuf -o0 sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;'
+    grep --line-buffered -Pv '(.{2,})\1{5,}'
     # Remove duplicate messages
     #| stdbuf -o0 uniq
 )
