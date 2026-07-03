@@ -30,8 +30,10 @@ WORKDIR /tts
 
 RUN rm -rf /tmp/dectalk
 
+RUN curl -fsSL https://deno.land/install.sh | sh -s -- -y
+
 RUN python3 -m venv venv
-RUN venv/bin/pip install yt-dlp
+RUN venv/bin/pip install yt-dlp[default]
 RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
 ENV PATH="/tts/venv/bin:${PATH}"
 

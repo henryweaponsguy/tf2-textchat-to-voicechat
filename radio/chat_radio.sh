@@ -19,12 +19,12 @@ exit_cleanup() {
         rm "$queue_pid_file"
     fi
 
-    if [ -e "$downloader_pid_file" ]; then
+    if [ -e "$download_queue_pid_file" ]; then
         while read -r pid; do
             kill "$pid" 2>/dev/null
             wait "$pid" 2>/dev/null
-        done < "$downloader_pid_file"
-        rm "$downloader_pid_file"
+        done < "$download_queue_pid_file"
+        rm "$download_queue_pid_file"
     fi
 }
 
@@ -34,7 +34,8 @@ trap exit_cleanup SIGINT SIGTERM EXIT
 
 piper_server="http://localhost:5000"
 announcer_pid_file="/tmp/announcer.pid"
-downloader_pid_file="/tmp/downloader.pid"
+download_queue_pid_file="/tmp/downloader.pid"
+download_queue_file="/tmp/download_queue.txt"
 paplay_pid_file="/tmp/paplay.pid"
 queue_pid_file="/tmp/queue.pid"
 queue_dir="${script_dir}/queue"
@@ -44,6 +45,7 @@ skip_voting_open_state_file="/tmp/skip_voting.open"
 recently_played_history_file="${script_dir}/recently_played_history.txt"
 
 mkdir -p "$queue_dir"
+touch "$download_queue_file"
 touch "$queue_file"
 touch "$skip_vote_file"
 touch "$recently_played_history_file"
@@ -97,10 +99,11 @@ EOF
     rm -f "$audio_file"
 }
 
-download_and_queue() {
+download_file() {
     local video_id="$1"
     local username="$2"
-    printf "%-25s%-25s%-25s%s\n" "Downloading:" "$video_id" "Queued by:" "$username"
+    printf "%-25s%s\n" "Downloading:" "$video_id" >&2
+    printf "%-25s%s\n" "Queued by:" "$username" >&2
 
     local audio_format="opus"
 
@@ -111,34 +114,30 @@ download_and_queue() {
 
     if [[ ${#matched_files[@]} -gt 0 ]]; then
         local audio_file="${matched_files[0]}"
-        printf "%-25s%s\n" "Already downloaded:" "$audio_file"
-
+        printf "%-25s%s\n" "Already downloaded:" "$audio_file" >&2
     else
         # Get the filename and video categories
         local metadata=$(
             yt-dlp \
                 --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
+                --limit-rate 500K \
                 --skip-download \
                 --no-warnings \
                 -o "%(title)s" \
-                --print "%(filename)s--SEP--%(categories)s" \
+                --print "%(filename)s--SEP--%(channel)s" \
                 -- "$video_id"
         )
         local title="${metadata%%--SEP--*}"
-        local categories="${metadata#*--SEP--}"
+        local channel="${metadata#*--SEP--}"
         local audio_file="$queue_dir/$title ($video_id).$audio_format"
 
-        printf "%-25s%s\n" "Title:" "$title"
-
-        # Check if the file is a music video
-        #if [[ "$categories" != *Music* ]]; then
-        #   printf "%-25s%s\n" "Not a music video:" "$title"
-        #   return
-        #fi
+        printf "%-25s%s\n" "Title:" "$title" >&2
+        printf "%-25s%s\n" "Channel:" "$channel" >&2
 
         # Download the file
         yt-dlp \
             --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
+            --limit-rate 500K \
             --extract-audio \
             --audio-format="$audio_format" \
             --match-filter "duration < 1200" \
@@ -149,11 +148,9 @@ download_and_queue() {
 
         # Check if the file has been downloaded successfully
         if [ ! -f "$audio_file" ]; then
-            printf "%-25s%s\n" "Video unavailable:" "$title"
+            printf "%-25s%s\n" "Video unavailable:" "$title" >&2
             return
         fi
-
-        printf "%-25s%s\n" "Downloaded:" "$audio_file"
 
         # Normalization parameters
         local lufs="-23"
@@ -249,30 +246,44 @@ download_and_queue() {
             fi
         fi
 
-        printf "%-25s%s\n" "Normalized:" "$audio_file"
+        printf "%-25s%s\n" "Downloaded:" "$audio_file" >&2
     fi
 
-    # Check if the file is queued already
-    if grep -Fxq "$audio_file" "$queue_file"; then
-        printf "%-25s%s\n" "Already in the queue:" "$audio_file"
-    # Check if the file has been recently played
-    elif grep -Fxq "$audio_file" "$recently_played_history_file"; then
-        printf "%-25s%s\n" "File recently played:" "$audio_file"
-    else
-        # Queue the file
-        echo "$audio_file" >> "$queue_file"
-        printf "%-25s%s\n" "Queued:" "$audio_file"
+    printf '%s' "$audio_file"
+}
 
-        recently_played_history_length=-1
+download_queue() {
+    while [[ -s "$download_queue_file" ]]; do
+        local video_id username
+        IFS=$'\t' read -r video_id username < "$download_queue_file"
 
-        # Add the file to the recently played files list
-        echo "$audio_file" >> "$recently_played_history_file"
+        audio_file=$(download_file "$video_id" "$username")
 
-        if [[ "$recently_played_history_length" > -1 ]]; then
-            tail -n "$recently_played_history_length" "$recently_played_history_file" > "$recently_played_history_file.tmp"
-            mv "$recently_played_history_file.tmp" "$recently_played_history_file"
+        # Check if the file is queued already
+        if grep -Fxq "$audio_file" "$queue_file"; then
+            printf "\033[32m%-25s%s\033[0m\n" "Already in the queue:" "$audio_file" >&2
+        # Check if the file has been recently played
+        elif grep -Fxq "$audio_file" "$recently_played_history_file"; then
+            printf "\033[32m%-25s%s\033[0m\n" "File recently played:" "$audio_file" >&2
+        else
+            # Queue the file
+            printf '%s\n' "$audio_file" >> "$queue_file"
+            printf "\033[32m%-25s%s\033[0m\n" "Queued:" "$audio_file" >&2
+
+            recently_played_history_length=-1
+
+            # Add the file to the recently played files list
+            printf '%s\n' "$audio_file" >> "$recently_played_history_file"
+
+            if [[ "$recently_played_history_length" > -1 ]]; then
+                tail -n "$recently_played_history_length" "$recently_played_history_file" > "$recently_played_history_file.tmp"
+                mv "$recently_played_history_file.tmp" "$recently_played_history_file"
+            fi
         fi
-    fi
+
+        # Remove the current file from the download queue file
+        tail -n +2 "$download_queue_file" > "$download_queue_file.tmp" && cat "$download_queue_file.tmp" > "$download_queue_file" && rm "$download_queue_file.tmp"
+    done
 }
 
 play_queue() {
@@ -283,7 +294,7 @@ play_queue() {
         tail -n +2 "$queue_file" > "$queue_file.tmp" && cat "$queue_file.tmp" > "$queue_file" && rm "$queue_file.tmp"
 
         if [[ -f "$audio_file" ]]; then
-            printf "%-25s%s\n" "Now playing:" "$audio_file"
+            printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file" >&2
 
             local file_title="${audio_file##*/}"
             file_title="${file_title%.*}"
@@ -309,7 +320,7 @@ play_queue() {
 
             rm "$skip_voting_open_state_file"
         else
-            printf "%-25s%s\n" "File not found:" "$audio_file"
+            printf "\033[36m%-25s%s\033[0m\n" "File not found:" "$audio_file" >&2
         fi
     done
 }
@@ -320,11 +331,19 @@ skip_current() {
 
     local paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
     if [[ -n "$paplay_pid" ]]; then
-        printf "%-25s%s\n" "Queue:" "Stopping current playback"
+        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Stopping current playback" >&2
         kill "$paplay_pid" 2>/dev/null
     else
-        printf "%-25s%s\n" "Queue:" "No active playback to stop"
+        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "No active playback to stop" >&2
     fi
+}
+
+start_download_queue() {
+    while true; do
+        download_queue
+
+        inotifywait -e modify "$download_queue_file"
+    done
 }
 
 start_queue() {
@@ -347,6 +366,10 @@ start_queue() {
 }
 
 
+# Start the downloader in the background
+start_download_queue &
+echo $! >> "$download_queue_pid_file"
+
 # Start the playback loop in the background
 start_queue &
 echo $! > "$queue_pid_file"
@@ -358,16 +381,15 @@ while IFS= read -r line; do
     # Extract YouTube URLs
     if grep -q '!queue' <<< "$line" && \
     [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+) ]]; then
-        download_and_queue "${BASH_REMATCH[-1]}" "$username" &
-        echo $! >> "$downloader_pid_file"
+        printf "%s\t%s\n" "${BASH_REMATCH[-1]}" "$username" >> "$download_queue_file"
     # Vote to skip the currently playing file
     elif grep -q '!skip' <<< "$line"; then
         # Check if there is a file playing
         if [ -e "$skip_voting_open_state_file" ]; then
             # Check if the user has not voted yet
             if ! grep -Fq "$(printf '%s' "$username")" "$skip_vote_file"; then
-                echo "$username" >> "$skip_vote_file"
-                printf "%-25s%s\n" "Voted to skip:" "$username"
+                printf '%s\n' "$username" >> "$skip_vote_file"
+                printf "\033[34m%-25s%s\033[0m\n" "Voted to skip:" "$username" >&2
 
                 required_vote_count=5
                 remaining_vote_count=$(( $required_vote_count - $(wc -l < "$skip_vote_file") ))
@@ -380,7 +402,7 @@ while IFS= read -r line; do
                 else
                     (speak_text "Skipping the file.") &
 
-                    printf "%-25s%s\n" "Queue:" "Skipping the file"
+                    printf "\033[36m%-25s%s\033[0m\n""Queue:" "Skipping the file" >&2
                     skip_current
                 fi
             fi
@@ -390,7 +412,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue \|skip\)" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  !\(queue \|skip\)" |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     # Keep messages only from whitelisted players

@@ -17,7 +17,7 @@ def exit_cleanup(signum, frame):
         if process and process.poll() is None:
             process.terminate()
 
-    for file in Path(tempfile.gettempdir()).glob("dectalk_voice-*.wav"):
+    for file in Path(tempfile.gettempdir()).glob("piper_voice-*.wav"):
         try:
             file.unlink()
         except FileNotFoundError:
@@ -32,13 +32,14 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 
 
 # Queue management files
+download_queue_file = Path(tempfile.gettempdir()) / "download_queue.txt"
 queue_dir = script_dir / "queue"
 queue_file = script_dir / "queue.txt"
 recently_played_history_file = script_dir / "recently_played_history.txt"
 
 queue_dir.mkdir(parents=True, exist_ok=True)
 
-for file in [queue_file, recently_played_history_file]:
+for file in [download_queue_file, queue_file, recently_played_history_file]:
     if not file.exists():
         file.touch()
 
@@ -60,12 +61,14 @@ whitelisted_names = ""
 blacklisted_words = ""
 
 
+piper_server = "http://localhost:5000"
+download_queue_thread = None
 queue_thread = None
 announcer_process = None
 radio_process = None
 skip_voting_open = False
 
-skip_vote_list = {}
+skip_vote_list = set()
 
 re_command = re.compile(
     r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip)( .+)?"
@@ -105,7 +108,7 @@ def speak_text(text):
         audio_file = tmp.name
 
     try:
-        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": "1"}
+        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": 1}
 
         post_request = urllib.request.Request(
             piper_server,
@@ -143,8 +146,9 @@ def speak_text(text):
             pass
 
 
-def download_and_queue(video_id, username):
-    print(f"{'Downloading:':<25}{video_id:<25}{'Queued by:':<25}{username}")
+def download_file(video_id, username):
+    print(f"{'Downloading:':<25}{video_id}")
+    print(f"{'Queued by:':<25}{username}")
 
     audio_format = "opus"
 
@@ -160,6 +164,8 @@ def download_and_queue(video_id, username):
                 "yt-dlp",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                "--limit-rate",
+                "500K",
                 "--skip-download",
                 "--no-warnings",
                 "-o",
@@ -173,15 +179,11 @@ def download_and_queue(video_id, username):
 
         video_info = json.loads(yt_dlp_output.stdout)
         title = video_info["filename"]
-        categories = video_info.get("categories", [])
+        channel = video_info["channel"]
         audio_file = queue_dir / f"{title} ({video_id}).{audio_format}"
 
         print(f"{'Title:':<25}{title}")
-
-        # Check if the file is a music video
-        # if "Music" not in categories:
-        #    print(f"{'Not a music video:':<25}{title}")
-        #    return
+        print(f"{'Channel:':<25}{channel}")
 
         # Download the file
         subprocess.run(
@@ -189,6 +191,8 @@ def download_and_queue(video_id, username):
                 "yt-dlp",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                "--limit-rate",
+                "500K",
                 "--extract-audio",
                 "--audio-format",
                 audio_format,
@@ -206,8 +210,6 @@ def download_and_queue(video_id, username):
         if not audio_file.exists():
             print(f"{'Video unavailable:':<25}{title}")
             return
-
-        print(f"{'Downloaded:':<25}{audio_file}")
 
         # Normalization parameters
         lufs = -23
@@ -365,85 +367,102 @@ def download_and_queue(video_id, username):
 
                 temp_file.replace(audio_file)
 
-        print(f"{'Normalized:':<25}{audio_file}")
+        print(f"{'Downloaded:':<25}{audio_file}")
 
-    # Check if the file is queued already
-    queued_files = queue_file.read_text().splitlines()
-    recently_played_files = recently_played_history_file.read_text().splitlines()
+    return audio_file
 
-    if str(audio_file) in queued_files:
-        print(f"{'Already in the queue:':<25}{audio_file}")
-    # Check if the file has been recently played
-    elif str(audio_file) in recently_played_files:
-        print(f"{'File recently played:':<25}{audio_file}")
-    else:
-        # Queue the file
-        with queue_file.open("a") as file:
-            file.write(f"{audio_file}\n")
-        print(f"{'Queued:':<25}{audio_file}")
 
-        recently_played_history_length = 5
+def download_queue():
+    while download_queue_file.exists() and download_queue_file.stat().st_size > 0:
+        with open(download_queue_file, "r+") as file:
+            video_id, username = file.readline().rstrip("\n").split("\t")
 
-        # Add the file to the recently played files list
-        recently_played_files.append(str(audio_file))
+        audio_file = download_file(video_id, username)
 
-        if recently_played_history_length > -1:
-            recently_played_files = recently_played_files[
-                -recently_played_history_length:
-            ]
-            recently_played_history_file.write_text(
-                "\n".join(str(path) for path in recently_played_files) + "\n"
-            )
+        # Check if the file is queued already
+        queued_files = queue_file.read_text().splitlines()
+        recently_played_files = recently_played_history_file.read_text().splitlines()
+
+        if str(audio_file) in queued_files:
+            print(f"\033[32m{'Already in the queue:':<25}{audio_file}\033[0m")
+        # Check if the file has been recently played
+        elif str(audio_file) in recently_played_files:
+            print(f"\033[32m{'File recently played:':<25}{audio_file}\033[0m")
+
+        else:
+            # Queue the file
+            with queue_file.open("a") as file:
+                file.write(f"{audio_file}\n")
+            print(f"\033[32m{'Queued:':<25}{audio_file}\033[0m")
+
+            recently_played_history_length = 5
+
+            # Add the file to the recently played files list
+            recently_played_files.append(str(audio_file))
+
+            if recently_played_history_length > -1:
+                recently_played_files = recently_played_files[
+                    -recently_played_history_length:
+                ]
+                recently_played_history_file.write_text(
+                    "\n".join(str(path) for path in recently_played_files) + "\n"
+                )
+
+        with open(download_queue_file, "r+") as file:
+            file.readline()
+            rest = file.read()
+
+            file.seek(0)
+            file.write(rest)
+            file.truncate()
 
 
 def play_queue():
     while queue_file.exists() and queue_file.stat().st_size > 0:
+        with open(queue_file, "r+") as file:
+            audio_file = file.readline().rstrip("\n")
 
-        queued_files = queue_file.read_text().splitlines()
-        if queued_files:
-            audio_file = queued_files[0]
+            rest = file.read()
+            file.seek(0)
+            file.write(rest)
+            file.truncate()
 
-            # Remove the current file from the queue file
-            queue_file.write_text(
-                "\n".join(queued_files[1:]) + ("\n" if len(queued_files) > 1 else "")
+        if Path(audio_file).exists():
+            print(f"\033[33m{'Now playing:':<25}{audio_file}\033[0m")
+
+            file_title = Path(audio_file).stem
+            for pattern, replacement in replacements:
+                file_title = pattern.sub(replacement, file_title)
+            file_title = re_allowed_filename_characters.sub("", file_title)
+
+            speak_text(f"Now playing: {file_title}.")
+
+            # Clear skip votes
+            skip_vote_list.clear()
+
+            # Play the file
+            global radio_process
+
+            global skip_voting_open
+            skip_voting_open = True
+
+            radio_process = subprocess.Popen(
+                [
+                    "paplay",
+                    "--device=virtual_speaker",
+                    "--client-name=radio",
+                    audio_file,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
+            radio_process.wait()
 
-            if not Path(audio_file).exists():
-                print(f"{'File not found:':<25}{audio_file}")
-            else:
-                print(f"{'Now playing:':<25}{audio_file}")
+            skip_voting_open = False
 
-                file_title = Path(audio_file).stem
-                for pattern, replacement in replacements:
-                    file_title = pattern.sub(replacement, file_title)
-                file_title = re_allowed_filename_characters.sub("", file_title)
-
-                speak_text(f"Now playing: {file_title}.")
-
-                # Clear skip votes
-                skip_vote_list.clear()
-
-                # Play the file
-                global radio_process
-
-                global skip_voting_open
-                skip_voting_open = True
-
-                radio_process = subprocess.Popen(
-                    [
-                        "paplay",
-                        "--device=virtual_speaker",
-                        "--client-name=radio",
-                        audio_file,
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                radio_process.wait()
-
-                skip_voting_open = False
-
-                radio_process = None
+            radio_process = None
+        else:
+            print(f"\033[36m{'File not found:':<25}{audio_file}\033[0m")
 
 
 def skip_current():
@@ -452,11 +471,25 @@ def skip_current():
 
     global radio_process
     if radio_process and radio_process.poll() is None:
-        print(f"{'Queue:':<25}{'Stopping current playback'}")
+        print(f"\033[36m{'Queue:':<25}{'Stopping current playback'}\033[0m")
         radio_process.terminate()
         radio_process = None
     else:
-        print(f"{'Queue:':<25}{'No active playback to stop'}")
+        print(f"\033[36m{'Queue:':<25}{'No active playback to stop'}\033[0m")
+
+
+def start_download_queue():
+    last_mtime = download_queue_file.stat().st_mtime
+
+    while True:
+        download_queue()
+
+        while True:
+            time.sleep(0.1)
+            new_mtime = download_queue_file.stat().st_mtime
+            if new_mtime != last_mtime:
+                last_mtime = new_mtime
+                break
 
 
 def start_queue():
@@ -473,6 +506,14 @@ def start_queue():
                 break
 
 
+# Start the downloader in the background
+download_queue_thread = Thread(
+    target=start_download_queue,
+    daemon=True,
+)
+download_queue_thread.start()
+
+# Start the playback loop in the background
 queue_thread = Thread(
     target=start_queue,
     daemon=True,
@@ -513,33 +554,25 @@ with open(console_log, "r") as log:
 
         selected_command = matched_command.group(4)
         if selected_command == "queue" and video_url:
-            Thread(
-                target=download_and_queue,
-                args=(
-                    video_url.group(4),
-                    username,
-                ),
-                daemon=True,
-            ).start()
+            with download_queue_file.open("a") as file:
+                file.write(f"{audio_file}\t{username}\n")
         # Vote to skip the currently playing file
         elif selected_command == "skip" and skip_voting_open:
             # Check if the user has not voted yet
             if username not in skip_vote_list:
-                skip_vote_list[username] = username
-                print(f"{'Voted to skip:':<25}{username}")
+                skip_vote_list.add(username)
+                print(f"\033[34m{'Voted to skip:':<25}{username}\033[0m")
 
-                required_skip_vote_count = 5
-                remaining_skip_vote_count = required_skip_vote_count - len(
-                    skip_vote_list
-                )
+                required_vote_count = 5
+                remaining_vote_count = required_vote_count - len(skip_vote_list)
 
-                if remaining_skip_vote_count > 1:
+                if remaining_vote_count > 1:
                     Thread(
                         target=speak_text,
-                        args=(f"{remaining_skip_vote_count} votes remaining.",),
+                        args=(f"{remaining_vote_count} votes remaining.",),
                         daemon=True,
                     ).start()
-                elif remaining_skip_vote_count == 1:
+                elif remaining_vote_count == 1:
                     Thread(
                         target=speak_text,
                         args=("1 vote remaining.",),
@@ -553,5 +586,5 @@ with open(console_log, "r") as log:
                         daemon=True,
                     ).start()
 
-                    print(f"{'Queue:':<25}{'Skipping the file'}")
+                    print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
                     skip_current()
