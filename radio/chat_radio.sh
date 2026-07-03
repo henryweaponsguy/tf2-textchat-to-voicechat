@@ -19,11 +19,10 @@ exit_cleanup() {
         rm "$queue_pid_file"
     fi
 
-    if [ -e "$download_queue_pid_file" ]; then
-        while read -r pid; do
-            kill "$pid" 2>/dev/null
-            wait "$pid" 2>/dev/null
-        done < "$download_queue_pid_file"
+    download_queue_pid=$(cat "$download_queue_pid_file" 2>/dev/null)
+    if [ -n "$download_queue_pid" ]; then
+        kill "$download_queue_pid" 2>/dev/null
+        wait "$download_queue_pid" 2>/dev/null
         rm "$download_queue_pid_file"
     fi
 }
@@ -368,7 +367,7 @@ start_queue() {
 
 # Start the downloader in the background
 start_download_queue &
-echo $! >> "$download_queue_pid_file"
+echo $! > "$download_queue_pid_file"
 
 # Start the playback loop in the background
 start_queue &
