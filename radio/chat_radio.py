@@ -162,6 +162,8 @@ def download_file(video_id, username):
         yt_dlp_output = subprocess.run(
             [
                 "yt-dlp",
+                "--js-runtimes",
+                "deno:/root/.deno/bin/deno",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                 "--limit-rate",
@@ -189,6 +191,8 @@ def download_file(video_id, username):
         subprocess.run(
             [
                 "yt-dlp",
+                "--js-runtimes",
+                "deno:/root/.deno/bin/deno",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                 "--limit-rate",
