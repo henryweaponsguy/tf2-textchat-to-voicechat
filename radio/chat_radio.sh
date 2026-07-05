@@ -113,7 +113,10 @@ download_file() {
 
     if [[ ${#matched_files[@]} -gt 0 ]]; then
         local audio_file="${matched_files[0]}"
-        printf "%-25s%s\n" "Already downloaded:" "$audio_file" >&2
+        local audio_file_stem=${audio_file##*/}
+        audio_file_stem=${audio_file_stem%.*}
+
+        printf "%-25s%s\n" "Already downloaded:" "$audio_file_stem" >&2
     else
         # Get the filename and video categories
         local metadata=$(
@@ -130,6 +133,8 @@ download_file() {
         local title="${metadata%%--SEP--*}"
         local channel="${metadata#*--SEP--}"
         local audio_file="$queue_dir/$title ($video_id).$audio_format"
+        local audio_file_stem=${audio_file##*/}
+        audio_file_stem=${audio_file_stem%.*}
 
         printf "%-25s%s\n" "Title:" "$title" >&2
         printf "%-25s%s\n" "Channel:" "$channel" >&2
@@ -149,105 +154,105 @@ download_file() {
 
         # Check if the file has been downloaded successfully
         if [ ! -f "$audio_file" ]; then
+            audio_file=""
             printf "%-25s%s\n" "Video unavailable:" "$title" >&2
-            return
-        fi
-
-        # Normalization parameters
-        local lufs="-23"
-        local tolerance="-1.0"
-        local loudness_range="9"
-        local target_peak="-9"
-        local peak_tolerance="0.3"
-
-        local temp_file="${audio_file%.*}-tmp.${audio_file##*.}"
-
-        # Get codec, sample rate, channel count and duration
-        local codec sample_rate channels duration
-        IFS=$'\t' read codec sample_rate channels duration < <(
-            ffprobe \
-                -hide_banner \
-                -v error \
-                -select_streams a:0 \
-                -show_entries stream=codec_name,sample_rate,channels \
-                -show_entries format=duration \
-                -of json \
-                "$audio_file" |
-            jq -r '[.streams[0].codec_name, .streams[0].sample_rate, .streams[0].channels, .format.duration] | @tsv'
-        )
-
-        [[ "$codec" == "opus" ]] && codec="libopus"
-
-        # LUFS normalization cannot be calculated for very short files, use peak normalization instead
-        if (( $(echo "$duration < 0.4" | bc -l) )); then
-            # Analyze the file
-            local current_peak=$(
-                ffmpeg \
-                    -hide_banner \
-                    -loglevel info \
-                    -i "$audio_file" \
-                    -filter:a "volumedetect" \
-                    -f null - 2>&1 |
-                grep "max_volume: " | cut -d ':' -f 2 | cut -d ' ' -f 2
-            )
-            local gain=$(echo "$target_peak - $current_peak" | bc -l)
-
-            # Normalize the file
-            ffmpeg \
-                -hide_banner \
-                -loglevel error \
-                -i "$audio_file" \
-                -filter:a "volume=${gain}dB" \
-                -acodec "$codec" \
-                -ar "$sample_rate" \
-                -ac "$channels" \
-                "$temp_file" \
-            && mv "$temp_file" "$audio_file"
         else
-            # Analyze the file
-            local input_i input_tp input_lra input_thresh
-            IFS=$'\t' read input_i input_tp input_lra input_thresh < <(
-                ffmpeg \
+            # Normalization parameters
+            local lufs="-23"
+            local tolerance="-1.0"
+            local loudness_range="9"
+            local target_peak="-9"
+            local peak_tolerance="0.3"
+
+            local temp_file="${audio_file%.*}-tmp.${audio_file##*.}"
+
+            # Get codec, sample rate, channel count and duration
+            local codec sample_rate channels duration
+            IFS=$'\t' read codec sample_rate channels duration < <(
+                ffprobe \
                     -hide_banner \
-                    -loglevel info \
-                    -i "$audio_file" \
-                    -filter:a \
-                        "loudnorm=\
-                        I=${lufs}:\
-                        TP=${tolerance}:\
-                        LRA=${loudness_range}:\
-                        print_format=json" \
-                    -f null - 2>&1 |
-                sed -n '/^{/,/}$/p' |
-                jq -r '[.input_i, .input_tp, .input_lra, .input_thresh] | @tsv'
+                    -v error \
+                    -select_streams a:0 \
+                    -show_entries stream=codec_name,sample_rate,channels \
+                    -show_entries format=duration \
+                    -of json \
+                    "$audio_file" |
+                jq -r '[.streams[0].codec_name, .streams[0].sample_rate, .streams[0].channels, .format.duration] | @tsv'
             )
 
-            # Skip silent files
-            if [[ "$input_i" != "-inf" ]]; then
-            # Remove silence from the beginning and the end of the file and normalize it
+            [[ "$codec" == "opus" ]] && codec="libopus"
+
+            # LUFS normalization cannot be calculated for very short files, use peak normalization instead
+            if (( $(echo "$duration < 0.4" | bc -l) )); then
+                # Analyze the file
+                local current_peak=$(
+                    ffmpeg \
+                        -hide_banner \
+                        -loglevel info \
+                        -i "$audio_file" \
+                        -filter:a "volumedetect" \
+                        -f null - 2>&1 |
+                    grep "max_volume: " | cut -d ':' -f 2 | cut -d ' ' -f 2
+                )
+                local gain=$(echo "$target_peak - $current_peak" | bc -l)
+
+                # Normalize the file
                 ffmpeg \
                     -hide_banner \
                     -loglevel error \
                     -i "$audio_file" \
-                    -filter:a \
-                        "loudnorm=\
-                        I=${lufs}:\
-                        TP=${tolerance}:\
-                        LRA=${loudness_range}:\
-                        linear=true:\
-                        measured_I=${input_i}:\
-                        measured_LRA=${input_lra}:\
-                        measured_tp=${input_tp}:\
-                        measured_thresh=${input_thresh}" \
+                    -filter:a "volume=${gain}dB" \
                     -acodec "$codec" \
                     -ar "$sample_rate" \
                     -ac "$channels" \
                     "$temp_file" \
                 && mv "$temp_file" "$audio_file"
-            fi
-        fi
+            else
+                # Analyze the file
+                local input_i input_tp input_lra input_thresh
+                IFS=$'\t' read input_i input_tp input_lra input_thresh < <(
+                    ffmpeg \
+                        -hide_banner \
+                        -loglevel info \
+                        -i "$audio_file" \
+                        -filter:a \
+                            "loudnorm=\
+                            I=${lufs}:\
+                            TP=${tolerance}:\
+                            LRA=${loudness_range}:\
+                            print_format=json" \
+                        -f null - 2>&1 |
+                    sed -n '/^{/,/}$/p' |
+                    jq -r '[.input_i, .input_tp, .input_lra, .input_thresh] | @tsv'
+                )
 
-        printf "%-25s%s\n" "Downloaded:" "$audio_file" >&2
+                # Skip silent files
+                if [[ "$input_i" != "-inf" ]]; then
+                # Remove silence from the beginning and the end of the file and normalize it
+                    ffmpeg \
+                        -hide_banner \
+                        -loglevel error \
+                        -i "$audio_file" \
+                        -filter:a \
+                            "loudnorm=\
+                            I=${lufs}:\
+                            TP=${tolerance}:\
+                            LRA=${loudness_range}:\
+                            linear=true:\
+                            measured_I=${input_i}:\
+                            measured_LRA=${input_lra}:\
+                            measured_tp=${input_tp}:\
+                            measured_thresh=${input_thresh}" \
+                        -acodec "$codec" \
+                        -ar "$sample_rate" \
+                        -ac "$channels" \
+                        "$temp_file" \
+                    && mv "$temp_file" "$audio_file"
+                fi
+            fi
+
+            printf "%-25s%s\n" "Downloaded:" "$audio_file_stem" >&2
+        fi
     fi
 
     printf '%s' "$audio_file"
@@ -258,18 +263,23 @@ download_queue() {
         local video_id username
         IFS=$'\t' read -r video_id username < "$download_queue_file"
 
-        audio_file=$(download_file "$video_id" "$username")
+        local audio_file=$(download_file "$video_id" "$username")
+        local audio_file_stem=${audio_file##*/}
+        audio_file_stem=${audio_file_stem%.*}
 
+        # Check if the file has been downloaded
+        if [[ -z "$audio_file" ]]; then
+            printf "\033[32m%-25s%s\033[0m\n" "Failed to download:" "$video_id" >&2
         # Check if the file is queued already
-        if grep -Fxq "$audio_file" "$queue_file"; then
-            printf "\033[32m%-25s%s\033[0m\n" "Already in the queue:" "$audio_file" >&2
+        elif grep -Fxq "$audio_file" "$queue_file"; then
+            printf "\033[32m%-25s%s\033[0m\n" "Already in the queue:" "$audio_file_stem" >&2
         # Check if the file has been recently played
         elif grep -Fxq "$audio_file" "$recently_played_history_file"; then
-            printf "\033[32m%-25s%s\033[0m\n" "File recently played:" "$audio_file" >&2
+            printf "\033[32m%-25s%s\033[0m\n" "File recently played:" "$audio_file_stem" >&2
         else
             # Queue the file
             printf '%s\n' "$audio_file" >> "$queue_file"
-            printf "\033[32m%-25s%s\033[0m\n" "Queued:" "$audio_file" >&2
+            printf "\033[32m%-25s%s\033[0m\n" "Queued:" "$audio_file_stem" >&2
 
             recently_played_history_length=-1
 
@@ -290,12 +300,14 @@ download_queue() {
 play_queue() {
     while [[ -s "$queue_file" ]]; do
         local audio_file=$(head -n 1 "$queue_file")
+        local audio_file_stem=${audio_file##*/}
+        audio_file_stem=${audio_file_stem%.*}
 
         # Remove the current file from the queue file
         tail -n +2 "$queue_file" > "$queue_file.tmp" && cat "$queue_file.tmp" > "$queue_file" && rm "$queue_file.tmp"
 
         if [[ -f "$audio_file" ]]; then
-            printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file" >&2
+            printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file_stem" >&2
 
             local file_title="${audio_file##*/}"
             file_title="${file_title%.*}"
@@ -343,7 +355,7 @@ start_download_queue() {
     while true; do
         download_queue
 
-        inotifywait -e modify "$download_queue_file"
+        inotifywait -e modify "$download_queue_file" 2>/dev/null
     done
 }
 
@@ -362,7 +374,7 @@ start_queue() {
     while true; do
         play_queue
 
-        inotifywait -e modify "$queue_file"
+        inotifywait -e modify "$queue_file" 2>/dev/null
     done
 }
 
@@ -403,7 +415,8 @@ while IFS= read -r line; do
                 else
                     (speak_text "Skipping the file.") &
 
-                    printf "\033[36m%-25s%s\033[0m\n""Queue:" "Skipping the file" >&2
+                    printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Skipping the file" >&2
+
                     skip_current
                 fi
             fi
