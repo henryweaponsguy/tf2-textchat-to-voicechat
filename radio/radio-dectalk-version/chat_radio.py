@@ -60,7 +60,6 @@ whitelisted_names = ""
 blacklisted_words = ""
 
 
-piper_server = "http://localhost:5000"
 download_queue_thread = None
 queue_thread = None
 announcer_process = None
