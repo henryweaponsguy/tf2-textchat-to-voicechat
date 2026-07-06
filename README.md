@@ -6,9 +6,9 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 ### Available scripts
 
-`chat-narrator` - reads text messages aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl). Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
+`narrator` - reads text messages aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl). Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
 
-`chat-notifications` - plays a notification sound (from the `sounds/` directory) when a player sends a text message
+`notifications` - plays a notification sound (from the `sounds/` directory) when a player sends a text message
 
 `poll` - allows creating simple 'yes/no' polls (plays sound cues from the `sounds/` directory)
 
@@ -23,6 +23,8 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 `soundboard-windows` - `soundboard` modified to work on Windows (requires [Python](https://www.python.org) and [mpv](https://mpv.io) to be installed. Other media players, like [VLC](https://www.videolan.org/vlc) or [ffplay](https://ffmpeg.org), can be used instead of mpv)
 
 `stt-dectalk` - converts speech to text-to-speech using [Vosk](https://alphacephei.com/vosk) and [DECtalk](https://github.com/dectalk/dectalk). Allows stopping playback early using a keyword (e.g. 'stop') (requires downloading a speech recognition model before running)
+
+`stt-piper` - converts speech to text-to-speech using [Vosk](https://alphacephei.com/vosk) and [Piper](https://github.com/OHF-Voice/piper1-gpl). Allows stopping playback early using a keyword (e.g. 'stop') (requires downloading a speech recognition model before running) (requires downloading a voice model before running)
 
 `stt-soundboard` - converts valid voice commands to sounds if they are available in the `sounds/` directory using [Vosk](https://alphacephei.com/vosk) (requires downloading a speech recognition model before running)
 

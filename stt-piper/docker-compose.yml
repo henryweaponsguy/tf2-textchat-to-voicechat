@@ -1,0 +1,23 @@
+services:
+  stt-piper:
+    image: stt-piper:latest
+    build: .
+    container_name: stt-piper
+    environment:
+      PULSE_SERVER: unix:/run/user/${UID}/pulse/native
+    volumes:
+      - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
+      - ./stt_to_speech.py:/tts/stt_to_speech.py:ro
+      - ./models:/tts/models:ro
+      - ./models-tts:/tts/models-tts:ro
+    devices:
+      - /dev/snd
+    ports:
+      - "5000:5000"
+    network_mode: none
+    security_opt:
+      - "no-new-privileges=true"
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
