@@ -493,6 +493,8 @@ def start_queue():
     while True:
         play_queue()
 
+        print(f"\033[36m{'Queue:':<25}{'No more files in the queue'}\033[0m")
+
         while True:
             time.sleep(0.1)
             new_mtime = queue_file.stat().st_mtime

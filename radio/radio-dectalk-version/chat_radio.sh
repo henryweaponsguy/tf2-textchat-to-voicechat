@@ -343,7 +343,7 @@ start_download_queue() {
     while true; do
         download_queue
 
-        inotifywait -e modify "$download_queue_file" 2>/dev/null
+        inotifywait -e modify "$download_queue_file" &>/dev/null
     done
 }
 
@@ -362,7 +362,9 @@ start_queue() {
     while true; do
         play_queue
 
-        inotifywait -e modify "$queue_file" 2>/dev/null
+        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "No more files in the queue" >&2
+
+        inotifywait -e modify "$queue_file" &>/dev/null
     done
 }
 
