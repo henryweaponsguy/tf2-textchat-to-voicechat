@@ -30,6 +30,8 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 `timer` - starts a countdown timer (plays sound cues from the `sounds/` directory)
 
+`translator` - translates text messages to English (requires downloading a voice model before running)
+
 `tts-dectalk` - converts text messages to speech using [DECtalk](https://github.com/dectalk/dectalk) (also known as the Moonbase Alpha voice). The phoneme format works, although the maximum text message length limits it significantly
 
 `tts-espeak` - converts text messages to speech using [eSpeak](https://github.com/espeak-ng/espeak-ng) (low quality, but lightweight and requires no setup)

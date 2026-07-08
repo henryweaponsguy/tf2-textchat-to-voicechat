@@ -69,7 +69,7 @@ skip_voting_open = False
 skip_vote_list = set()
 
 re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip)( .+)?"
+    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) ?(.+)?"
 )
 re_blacklisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
@@ -546,10 +546,10 @@ with open(console_log, "r") as log:
 
         # Extract video urls, usernames, commands and command input
         matched_command = re_command.match(line)
-        video_url = re_url.search(line)
         username = matched_command.group(3)
-
         selected_command = matched_command.group(4)
+        video_url = matched_command.group(5)
+
         if selected_command == "queue" and video_url:
             with download_queue_file.open("a") as file:
                 file.write(f"{audio_file}\t{username}\n")
