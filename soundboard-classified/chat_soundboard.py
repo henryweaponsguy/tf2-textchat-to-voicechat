@@ -15,6 +15,12 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
+rate_limiting = {}
+
+
+# Minimum time between messages (in seconds)
+rate_limit = 0
+
 # Soundboard sounds directory
 sound_dir = script_dir / "sounds"
 
@@ -81,25 +87,38 @@ with open(console_log, "r") as log:
         # Keep messages only from whitelisted players
         if not re_whitelisted_names.search(line):
             continue
-        # Extract the message
-        line = re_command.match(line).group(4)
-        # Convert the message to lowercase
-        line = line.lower()
         # Remove messages with blacklisted words
         if re_blacklisted_words.search(line):
             continue
-        # Remove non-ASCII and control characters
-        line = re_allowed_characters.sub("", line)
-        # Trim and normalize whitespace
-        line = " ".join(line.split())
         # Remove duplicate messages
         # if line == previous_line:
         #    continue
         # previous_line = line
 
+        # Extract usernames and messages
+        matched_command = re_command.match(line)
+        username = matched_command.group(3)
+        message = matched_command.group(4)
+
+        current_time = int(time.time())
+
+        if username in rate_limiting and (
+            current_time - rate_limiting[username] <= rate_limit
+        ):
+            continue
+
+        rate_limiting[username] = current_time
+
+        # Convert the message to lowercase
+        message = message.lower()
+        # Remove non-ASCII and control characters
+        message = re_allowed_characters.sub("", message)
+        # Trim and normalize whitespace
+        message = " ".join(message.split())
+
         # Match files
-        matched_files = list(sound_dir.glob(f"{line}.*")) + list(
-            sound_dir.glob(f"{line} [0-9]*.*")
+        matched_files = list(Path(sound_dir).glob(f"{message}.*")) + list(
+            Path(sound_dir).glob(f"{message} [0-9]*.*")
         )
 
         if matched_files:

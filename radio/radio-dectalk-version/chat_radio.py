@@ -386,7 +386,7 @@ def download_queue():
 
         else:
             # Queue the file
-            with queue_file.open("a") as file:
+            with open(queue_file, "a") as file:
                 file.write(f"{audio_file}\n")
             print(f"\033[32m{'Queued:':<25}{audio_file.stem}\033[0m")
 
@@ -551,7 +551,7 @@ with open(console_log, "r") as log:
         video_url = matched_command.group(5)
 
         if selected_command == "queue" and video_url:
-            with download_queue_file.open("a") as file:
+            with open(download_queue_file, "a") as file:
                 file.write(f"{audio_file}\t{username}\n")
         # Vote to skip the currently playing file
         elif selected_command == "skip" and skip_voting_open:

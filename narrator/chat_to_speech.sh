@@ -97,7 +97,7 @@ while IFS= read -r line; do
 
         printf '%s\t%s\t%s\t%s\n' "$username" "$voice" "$length_scale" "${speaker:-}" >> "$username_voices_file"
     else
-        username_voice=$(grep -F "$username" "$username_voices_file")
+        username_voice=$(grep -F "$(printf '%s\t' "$username")" "$username_voices_file")
         IFS=$'\t' read -r username voice length_scale speaker <<< "$username_voice"
     fi
 

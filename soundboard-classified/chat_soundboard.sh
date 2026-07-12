@@ -3,6 +3,12 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
+declare -A rate_limiting
+
+
+# Minimum time between messages (in seconds)
+rate_limit=0
+
 # Soundboard sounds directory
 sound_dir="${script_dir}/sounds"
 
@@ -23,37 +29,37 @@ whitelisted_names=""
 blacklisted_words=""
 
 
-# Continuously read the last line of the log as it is updated
-stdbuf -oL tail -fn 1 "$console_log" |
-# Search for lines containing the command
-#grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: !play " |
-grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: " |
-# Remove messages from blacklisted players
-#grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: !" |
-grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: " |
-# Keep messages only from whitelisted players
-#grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: !" |
-grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: " |
-# Extract the message
-#stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: ![a-zA-Z0-9_]\+ *//' |
-stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: *//' |
-# Convert the message to lowercase
-perl -C -pe 'BEGIN { $| = 1 } $_ = lc' |
-# Remove messages with blacklisted words
-grep --line-buffered -iv "${blacklisted_words:-$^}" |
-# Remove non-ASCII and control characters
-stdbuf -o0 tr -cd '[:alnum:][:space:][:punct:]' |
-# Trim and normalize whitespace
-stdbuf -o0 sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' |
-# Remove duplicate messages
-#stdbuf -o0 uniq |
-# Play the audio file
 while IFS= read -r line; do
+    # Extract usernames and messages
+    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?\([^:]\+\): .\+/\3/p' <<< "$line")
+    #message=$(sed 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
+    message=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: \(.\+\)/\3/p' <<< "$line")
+
+
+    current_time="$(date +%s)"
+
+    if [[ -v rate_limiting["$username"] ]] &&
+        (( current_time - rate_limiting["$username"] <= rate_limit )); then
+        continue
+    fi
+
+    rate_limiting["$username"]="$current_time"
+
+
+    message="$(
+        # Convert the message to lowercase
+        printf '%s' "${message,,}" |
+        # Remove non-ASCII and control characters
+        tr -cd '[:alnum:][:space:][:punct:]' |
+        # Trim and normalize whitespace
+        sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;'
+    )"
+
     # Match files
     shopt -s nullglob
     matched_files=(
-        "$sound_dir/$line".*
-        "$sound_dir/$line "[0-9]*.*
+        "$sound_dir/$message".*
+        "$sound_dir/$message "[0-9]*.*
     )
     shopt -u nullglob
 
@@ -62,4 +68,21 @@ while IFS= read -r line; do
 
         paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1 &
     fi
-done
+done < <(
+    # Continuously read the last line of the log as it is updated
+    stdbuf -oL tail -fn 1 "$console_log" |
+    # Search for lines containing the command
+    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: !play " |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?[^:]\+: " |
+    # Remove messages from blacklisted players
+    #grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: !" |
+    grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${blacklisted_names:-$^}: " |
+    # Keep messages only from whitelisted players
+    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: !" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?${whitelisted_names:-.*}: " |
+    # Remove messages with blacklisted words
+    grep --line-buffered -iv "${blacklisted_words:-$^}"
+    # Remove duplicate messages
+    #| stdbuf -o0 uniq
+    # Play the audio file
+)
