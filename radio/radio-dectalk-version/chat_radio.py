@@ -466,11 +466,8 @@ def skip_current():
 
     global radio_process
     if radio_process and radio_process.poll() is None:
-        print(f"\033[36m{'Queue:':<25}{'Stopping current playback'}\033[0m")
         radio_process.terminate()
         radio_process = None
-    else:
-        print(f"\033[36m{'Queue:':<25}{'No active playback to stop'}\033[0m")
 
 
 def start_download_queue():

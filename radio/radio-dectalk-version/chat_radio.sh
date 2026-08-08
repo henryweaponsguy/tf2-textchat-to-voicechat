@@ -332,10 +332,7 @@ skip_current() {
 
     local paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
     if [[ -n "$paplay_pid" ]]; then
-        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Stopping current playback" >&2
         kill "$paplay_pid" 2>/dev/null
-    else
-        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "No active playback to stop" >&2
     fi
 }
 
@@ -406,6 +403,7 @@ while IFS= read -r line; do
                     (speak_text "Skipping the file.") &
 
                     printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Skipping the file" >&2
+
                     skip_current
                 fi
             fi
