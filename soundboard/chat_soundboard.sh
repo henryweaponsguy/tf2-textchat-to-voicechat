@@ -35,17 +35,6 @@ while IFS= read -r line; do
     #message=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
     message=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
 
-
-    current_time="$(date +%s)"
-
-    if [[ -v rate_limiting["$username"] ]] &&
-        (( current_time - rate_limiting["$username"] <= rate_limit )); then
-        continue
-    fi
-
-    rate_limiting["$username"]="$current_time"
-
-
     message="$(
         # Convert the message to lowercase
         printf '%s' "${message,,}" |
@@ -64,6 +53,16 @@ while IFS= read -r line; do
     shopt -u nullglob
 
     if [[ ${#matched_files[@]} -gt 0 ]]; then
+        current_time="$(date +%s)"
+
+        if [[ -v rate_limiting["$username"] ]] &&
+            (( current_time - rate_limiting["$username"] <= rate_limit )); then
+            continue
+        fi
+
+        rate_limiting["$username"]="$current_time"
+
+
         selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
         paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1 &

@@ -106,15 +106,6 @@ with open(console_log, "r") as log:
         username = matched_command.group(3)
         message = matched_command.group(4)
 
-        current_time = int(time.time())
-
-        if username in rate_limiting and (
-            current_time - rate_limiting[username] <= rate_limit
-        ):
-            continue
-
-        rate_limiting[username] = current_time
-
         # Convert the message to lowercase
         message = message.lower()
         # Remove non-ASCII and control characters
@@ -128,6 +119,16 @@ with open(console_log, "r") as log:
         )
 
         if matched_files:
+            current_time = int(time.time())
+
+            if username in rate_limiting and (
+                current_time - rate_limiting[username] <= rate_limit
+            ):
+                continue
+
+            rate_limiting[username] = current_time
+
+
             selected_file = str(random.choice(matched_files))
 
             Thread(
