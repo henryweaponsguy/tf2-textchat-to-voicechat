@@ -34,7 +34,7 @@ console_log="${script_dir}/console.log"
 
 # User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-blacklisted_names="Henry"
+blacklisted_names=""
 
 # Alternatively, a whitelist:
 whitelisted_names=""
@@ -50,7 +50,7 @@ while IFS= read -r line; do
     text=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
     
     # Remove non-ASCII and control characters
-    text=$(tr -cd '[:alnum:][:space:][:punct:]')
+    text=$(tr -cd '[:alnum:][:space:][:punct:]' <<< "$text")
 
     [[ -z "$text" ]] && continue
 
