@@ -29,7 +29,7 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 
 
 sound_dir = script_dir / "sounds"
-piper_server = "http://localhost:5000"
+piper_server = "http://localhost:5000/synthesize"
 username_voices_file = script_dir / "username_voices.txt"
 
 if not username_voices_file.exists():
@@ -84,6 +84,7 @@ re_whitelisted_names = re.compile(
 )
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
+re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
 
 replacements = [
     (re.compile(r"btw", re.IGNORECASE), "by the way"),
@@ -138,6 +139,9 @@ with open(console_log, "r") as log:
         matched_command = re_command.match(line)
         username = matched_command.group(3)
         text = matched_command.group(4)
+
+        # Remove non-ASCII and control characters
+        text = re_allowed_characters.sub("", text)
 
         if not text:
             continue

@@ -51,7 +51,7 @@ blacklisted_words = ""
 whitelisted_poll_names = ""
 
 
-piper_server = "http://localhost:5000"
+piper_server = "http://localhost:5000/synthesize"
 poll_thread = None
 poll_open = False
 

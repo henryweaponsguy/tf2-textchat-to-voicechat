@@ -1,6 +1,6 @@
 #!/bin/bash
 
-piper_server="http://localhost:5000"
+piper_server="http://localhost:5000/synthesize"
 
 # Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples

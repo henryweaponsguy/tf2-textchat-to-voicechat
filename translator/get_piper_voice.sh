@@ -1,6 +1,6 @@
 #!/bin/bash
 
-piper_server="http://tf2-translator-tts:5000"
+piper_server="http://tf2-translator-tts:5000/synthesize"
 
 
 speak_text() {

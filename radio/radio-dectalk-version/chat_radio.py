@@ -46,7 +46,7 @@ for file in [download_queue_file, queue_file, recently_played_history_file]:
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
-console_log = f"{script_dir}/console.log"
+console_log = script_dir / "console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
@@ -78,13 +78,14 @@ re_whitelisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
 )
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
-re_allowed_filename_characters = re.compile(r"[^A-Za-z0-9\s'-_]")
 re_url = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
 )
 
 replacements = [
     (re.compile(r"\([A-Za-z0-9_-]+\)$"), ""),
+    (re.compile(r"[-_]"), ","),
+    (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
     (
         re.compile(
             r"[\[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[\]\)] *",
@@ -92,7 +93,6 @@ replacements = [
         ),
         "",
     ),
-    (re.compile(r"[-_]"), ","),
 ]
 
 
@@ -369,6 +369,11 @@ def download_queue():
         with open(download_queue_file, "r+") as file:
             video_id, username = file.readline().rstrip("\n").split("\t")
 
+            rest = file.read()
+            file.seek(0)
+            file.write(rest)
+            file.truncate()
+
         audio_file = download_file(video_id, username)
 
         # Check if the file is queued already
@@ -383,7 +388,6 @@ def download_queue():
         # Check if the file has been recently played
         elif str(audio_file) in recently_played_files:
             print(f"\033[32m{'File recently played:':<25}{audio_file.stem}\033[0m")
-
         else:
             # Queue the file
             with open(queue_file, "a") as file:
@@ -395,21 +399,14 @@ def download_queue():
             # Add the file to the recently played files list
             recently_played_files.append(str(audio_file))
 
-            if recently_played_history_length > -1:
+            if recently_played_history_length > 0:
                 recently_played_files = recently_played_files[
                     -recently_played_history_length:
                 ]
-                recently_played_history_file.write_text(
-                    "\n".join(str(path) for path in recently_played_files) + "\n"
-                )
 
-        with open(download_queue_file, "r+") as file:
-            file.readline()
-            rest = file.read()
-
-            file.seek(0)
-            file.write(rest)
-            file.truncate()
+            recently_played_history_file.write_text(
+                "\n".join(str(path) for path in recently_played_files) + "\n"
+            )
 
 
 def play_queue():
@@ -425,12 +422,11 @@ def play_queue():
         if Path(audio_file).exists():
             print(f"\033[33m{'Now playing:':<25}{audio_file.stem}\033[0m")
 
-            file_title = Path(audio_file).stem
+            clean_title = Path(audio_file).stem
             for pattern, replacement in replacements:
-                file_title = pattern.sub(replacement, file_title)
-            file_title = re_allowed_filename_characters.sub("", file_title)
+                clean_title = pattern.sub(replacement, clean_title)
 
-            speak_text(f"Now playing: {file_title}.")
+            speak_text(f"Now playing: {clean_title}.")
 
             # Clear skip votes
             skip_vote_list.clear()
@@ -546,10 +542,11 @@ with open(console_log, "r") as log:
         username = matched_command.group(3)
         selected_command = matched_command.group(4)
         video_url = matched_command.group(5)
+        video_id = re_url.match(video_url).group(4)
 
-        if selected_command == "queue" and video_url:
+        if selected_command == "queue" and video_id:
             with open(download_queue_file, "a") as file:
-                file.write(f"{audio_file}\t{username}\n")
+                file.write(f"{video_id}\t{username}\n")
         # Vote to skip the currently playing file
         elif selected_command == "skip" and skip_voting_open:
             # Check if the user has not voted yet

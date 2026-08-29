@@ -3,7 +3,7 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 sound_dir="${script_dir}/sounds"
-piper_server="http://localhost:5000"
+piper_server="http://localhost:5000/synthesize"
 username_voices_file="${script_dir}/username_voices.txt"
 
 if [ ! -f "$username_voices_file" ]; then
@@ -34,7 +34,7 @@ console_log="${script_dir}/console.log"
 
 # User blacklist:
 # Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
-blacklisted_names=""
+blacklisted_names="Henry"
 
 # Alternatively, a whitelist:
 whitelisted_names=""
@@ -48,6 +48,9 @@ while IFS= read -r line; do
     username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
     #text=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
     text=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
+    
+    # Remove non-ASCII and control characters
+    text=$(tr -cd '[:alnum:][:space:][:punct:]')
 
     [[ -z "$text" ]] && continue
 

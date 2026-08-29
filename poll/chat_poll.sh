@@ -29,7 +29,7 @@ trap exit_cleanup SIGINT SIGTERM EXIT
 
 
 sound_dir="${script_dir}/sounds"
-piper_server="http://localhost:5000"
+piper_server="http://localhost:5000/synthesize"
 vote_file="${script_dir}/votes.txt"
 poll_pid_file="/tmp/poll.pid"
 poll_open_state_file="/tmp/poll.open"

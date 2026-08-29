@@ -31,7 +31,7 @@ exit_cleanup() {
 trap exit_cleanup SIGINT SIGTERM EXIT
 
 
-piper_server="http://localhost:5000"
+piper_server="http://localhost:5000/synthesize"
 announcer_pid_file="/tmp/announcer.pid"
 download_queue_pid_file="/tmp/downloader.pid"
 download_queue_file="/tmp/download_queue.txt"
@@ -118,7 +118,7 @@ download_file() {
 
         printf "%-25s%s\n" "Already downloaded:" "$audio_file_stem" >&2
     else
-        # Get the filename and video categories
+        # Get the video's filename, title and channel
         local metadata=$(
             yt-dlp \
                 --js-runtimes "deno:/root/.deno/bin/deno" \
@@ -281,7 +281,7 @@ download_queue() {
             printf '%s\n' "$audio_file" >> "$queue_file"
             printf "\033[32m%-25s%s\033[0m\n" "Queued:" "$audio_file_stem" >&2
 
-            recently_played_history_length=-1
+            recently_played_history_length=5
 
             # Add the file to the recently played files list
             printf '%s\n' "$audio_file" >> "$recently_played_history_file"
