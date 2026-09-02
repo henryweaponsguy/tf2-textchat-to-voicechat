@@ -66,6 +66,7 @@ whitelisted_names=""
 # Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
 blacklisted_words=""
 
+
 speak_text() {
     local text="$1"
 
@@ -130,6 +131,7 @@ download_file() {
                 --print "%(filename)s--SEP--%(channel)s" \
                 -- "$video_id"
         )
+
         local title="${metadata%%--SEP--*}"
         local channel="${metadata#*--SEP--}"
         local audio_file="$queue_dir/$title ($video_id).$audio_format"
@@ -388,10 +390,10 @@ echo $! > "$queue_pid_file"
 
 
 while IFS= read -r line; do
-    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
+    username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")"
 
     # Extract YouTube URLs
-    if grep -q '!queue' <<< "$line" && \
+    if grep -q '!queue' <<< "$line" &&
     [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+) ]]; then
         printf "%s\t%s\n" "${BASH_REMATCH[-1]}" "$username" >> "$download_queue_file"
     # Vote to skip the currently playing file

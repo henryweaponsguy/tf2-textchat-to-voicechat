@@ -3,14 +3,12 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
-declare -A rate_limiting
-
-
 # Minimum time between messages (in seconds)
 rate_limit=0
 
 # Soundboard sounds directory
 sound_dir="${script_dir}/sounds"
+
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively add "con_logfile <logfile location>" to TF2's autoexec.cfg,
@@ -29,11 +27,14 @@ whitelisted_names=""
 blacklisted_words=""
 
 
+declare -A rate_limiting
+
+
 while IFS= read -r line; do
     # Extract usernames and messages
-    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
-    #message=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
-    message=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
+    username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")"
+    #message="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/p' <<< "$line")"
+    message="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")"
 
     message="$(
         # Convert the message to lowercase
@@ -52,21 +53,22 @@ while IFS= read -r line; do
     )
     shopt -u nullglob
 
-    if [[ ${#matched_files[@]} -gt 0 ]]; then
-        current_time="$(date +%s)"
-
-        if [[ -v rate_limiting["$username"] ]] &&
-            (( current_time - rate_limiting["$username"] <= rate_limit )); then
-            continue
-        fi
-
-        rate_limiting["$username"]="$current_time"
-
-
-        selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
-
-        paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1 &
+    if [[ ${#matched_files[@]} -eq 0 ]]; then
+        continue
     fi
+
+    current_time="$(date +%s)"
+
+    if [[ -v rate_limiting["$username"] ]] &&
+        (( current_time - rate_limiting["$username"] <= rate_limit )); then
+        continue
+    fi
+
+    rate_limiting["$username"]="$current_time"
+
+    selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+
+    paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1 &
 done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
@@ -83,5 +85,4 @@ done < <(
     grep --line-buffered -iv "${blacklisted_words:-$^}"
     # Remove duplicate messages
     #| stdbuf -o0 uniq
-    # Play the audio file
 )

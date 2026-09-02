@@ -45,12 +45,12 @@ blacklisted_words=""
 
 
 while IFS= read -r line; do
-    username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
-    #text=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")
-    text=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")
-    
+    username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")"
+    #text="$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ \(.\+\)/\3/' <<< "$line")"
+    text="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  \(.\+\)/\3/p' <<< "$line")"
+
     # Remove non-ASCII and control characters
-    text=$(tr -cd '[:alnum:][:space:][:punct:]' <<< "$text")
+    text="$(tr -cd '[:alnum:][:space:][:punct:]' <<< "$text")"
 
     [[ -z "$text" ]] && continue
 

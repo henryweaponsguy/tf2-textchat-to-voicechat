@@ -10,7 +10,7 @@ translate() {
     text="$1"
     [[ -z "$text" ]] && return
 
-    language=$(python3 -c "import sys; from langdetect import detect; print(detect(sys.argv[1]))" "$text")
+    language="$(python3 -c "import sys; from langdetect import detect; print(detect(sys.argv[1]))" "$text")"
 
     [[ "$language" == "en" ]] && return
     
@@ -27,11 +27,11 @@ cat <<EOF
 EOF
 )"
 
-    translation=$(
+    translation="$(
         curl -X POST "$translation_server" -H "Content-Type: application/json" --data "$data" \
             --silent --show-error |
         jq -r '.translatedText'
-    )
+    )"
 
     echo "$text"
     echo "$language"

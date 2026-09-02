@@ -130,7 +130,7 @@ start_poll() {
 
 
 while IFS= read -r line; do
-    command_input=$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ *//' <<< "$line")
+    command_input="$(sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  ![a-zA-Z0-9_]\+ *//' <<< "$line")"
 
     if grep -q '!startpoll ' <<< "$line" && grep -q "${whitelisted_poll_names:-.*}" <<< "$line"; then
         # Check if the poll is running
@@ -141,7 +141,7 @@ while IFS= read -r line; do
     elif grep -q '!poll ' <<< "$line"; then
         # Check if the poll is open
         if [ -e "$poll_open_state_file" ]; then
-            username=$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")
+            username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\([^:]\+\) :  .\+/\3/p' <<< "$line")"
 
             # Check if the user has not voted yet
             if ! grep -Fq "$(printf '%s\t' "$username")" "$vote_file"; then

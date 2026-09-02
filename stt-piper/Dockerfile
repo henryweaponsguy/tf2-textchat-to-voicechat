@@ -19,4 +19,4 @@ RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
 ENV PATH="/tts/venv/bin:${PATH}"
 
 
-CMD ["python3", "-m", "piper.http_server", "--data-dir", "models-tts/", "-m", "en_GB-alan-medium"]
+CMD ["python3", "-m", "piper.http_server", "--data-dir", "models-tts/", "-m", "en_US-joe-medium"]

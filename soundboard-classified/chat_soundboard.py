@@ -15,14 +15,12 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-rate_limiting = {}
-
-
 # Minimum time between messages (in seconds)
 rate_limit = 0
 
 # Soundboard sounds directory
 sound_dir = script_dir / "sounds"
+
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
@@ -40,6 +38,8 @@ whitelisted_names = ""
 # Example: "nominate|rtv|nextmap"
 blacklisted_words = ""
 
+
+rate_limiting = {}
 
 previous_line = None
 
@@ -112,21 +112,22 @@ with open(console_log, "r") as log:
             Path(sound_dir).glob(f"{message} [0-9]*.*")
         )
 
-        if matched_files:
-            current_time = int(time.time())
+        if not matched_files:
+            continue
 
-            if username in rate_limiting and (
-                current_time - rate_limiting[username] <= rate_limit
-            ):
-                continue
+        current_time = int(time.time())
 
-            rate_limiting[username] = current_time
+        if username in rate_limiting and (
+            current_time - rate_limiting[username] <= rate_limit
+        ):
+            continue
 
+        rate_limiting[username] = current_time
 
-            selected_file = str(random.choice(matched_files))
+        selected_file = str(random.choice(matched_files))
 
-            Thread(
-                target=play_sound,
-                args=(selected_file,),
-                daemon=True,
-            ).start()
+        Thread(
+            target=play_sound,
+            args=(selected_file,),
+            daemon=True,
+        ).start()

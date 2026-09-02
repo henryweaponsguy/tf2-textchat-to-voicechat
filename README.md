@@ -6,13 +6,21 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 ### Available scripts
 
+`kill-announcer` - reads a message aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl) when a target player dies
+
+`kill-sound` - plays a sound (from the `sounds/` directory) when a target player dies
+
 `narrator` - reads text messages aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl). Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
 
 `notifications` - plays a notification sound (from the `sounds/` directory) when a player sends a text message
 
 `poll` - allows creating simple 'yes/no' polls (plays sound cues from the `sounds/` directory)
 
-`radio` - allows queuing YouTube videos to be downloaded and played next. Allows voting to skip the currently playing file
+`radio` - allows queuing YouTube videos to be downloaded and played next. Allows voting to skip the currently playing video (uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading videos and [ffmpeg](https://ffmpeg.org) for audio normalization)
+
+`radio-browser` - `radio` modified to play videos directly in a web browser instead of downloading them (using separate software for audio normalization is recommended, a config file for [Carla](https://kx.studio/Applications:Carla) is provided)
+
+`requests` - logs requests to console for easier tracking (e.g. for music requests). Converts YouTube URLs to titles automatically
 
 `sentence-mixer` - converts text messages to speech using files from the `voices/` directory. The audio files need to have the same parameters (channel count, codec, sample rate), otherwise the output audio will come out corrupted
 
@@ -52,11 +60,15 @@ Add `-condebug` to TF2's launch parameters. Alternatively, add `con_logfile <log
 
 Run TF2 at least once before starting a container so the `console.log` file is created
 
-Build and run the container: `export UID=$(id -u); docker compose up -d`
+Run a container: `export UID=$(id -u); docker compose up -d`
 
-Run the script in the container: `docker exec -it <container name, e.g. tf2-dectalk> '/tts/<script name, e.g. chat_to_speech.sh>'`
+Run a script in the container: `docker exec -it <container name, e.g. tf2-soundboard> '/tts/<script name, e.g. chat_soundboard.sh>'`
+
+Or to run a Python script: `docker exec -it <container name, e.g. tf2-soundboard> python3 '/tts/<script name, e.g. chat_soundboard.py>'`
 
 Stop the container: `docker compose down`
+
+Rebuild a container to update dependencies: `export UID=$(id -u); docker compose build`
 
 ---
 
