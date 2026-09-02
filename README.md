@@ -64,7 +64,7 @@ Run a container: `export UID=$(id -u); docker compose up -d`
 
 Run a script in the container: `docker exec -it <container name, e.g. tf2-soundboard> '/tts/<script name, e.g. chat_soundboard.sh>'`
 
-Or to run a Python script: `docker exec -it <container name, e.g. tf2-soundboard> python3 '/tts/<script name, e.g. chat_soundboard.py>'`
+Or to run a Python script: `docker exec -it <container name, e.g. tf2-soundboard> python '/tts/<script name, e.g. chat_soundboard.py>'`
 
 Stop the container: `docker compose down`
 
