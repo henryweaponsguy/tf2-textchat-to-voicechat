@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Radio</title>
+  </head>
+  <body>
+    <div id="player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+      let player = null;
+      const events = new EventSource("/radio");
+
+      events.addEventListener("play", (event) => {
+        player.loadVideoById(event.data);
+      });
+
+      events.addEventListener("skip", () => {
+        player.stopVideo();
+      });
+
+      function requestNext() {
+        fetch("/radio", {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+          body: "next",
+        });
+      }
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("player", {
+          width: "960",
+          height: "540",
+          events: {
+            onReady: requestNext,
+            onStateChange: (event) => {
+              if (event.data === YT.PlayerState.ENDED) requestNext();
+            },
+            // Request a new video only on errors related to videos being unavailable or private
+            onError: (event) => {
+              if ([2, 100, 101, 150].includes(event.data)) requestNext();
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -18,7 +18,7 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 `radio` - allows queuing YouTube videos to be downloaded and played next. Allows voting to skip the currently playing video (uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading videos and [ffmpeg](https://ffmpeg.org) for audio normalization)
 
-`radio-browser` - `radio` modified to play videos directly in a web browser instead of downloading them (using separate software for audio normalization is recommended, a config file for [Carla](https://kx.studio/Applications:Carla) is provided)
+`radio-browser` - `radio` modified to play videos directly in a web browser instead of downloading them (dedicated software for audio normalization, like [LSP Autogain](https://lsp-plug.in/?page=manuals&section=autogain_stereo) and [master_me](https://github.com/trummerschlunk/master_me), is recommended, config files for [Carla](https://kx.studio/Applications:Carla) are provided)
 
 `requests` - logs requests to console for easier tracking (e.g. for music requests). Converts YouTube URLs to titles automatically
 

@@ -1,0 +1,545 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE CARLA-PROJECT>
+<CARLA-PROJECT VERSION='2.2'>
+ <EngineSettings>
+  <ForceStereo>false</ForceStereo>
+  <PreferPluginBridges>false</PreferPluginBridges>
+  <PreferUiBridges>true</PreferUiBridges>
+  <UIsAlwaysOnTop>false</UIsAlwaysOnTop>
+  <MaxParameters>200</MaxParameters>
+  <UIBridgesTimeout>4000</UIBridgesTimeout>
+ </EngineSettings>
+
+ <Transport>
+  <BeatsPerMinute>120</BeatsPerMinute>
+ </Transport>
+
+ <!-- Calf Mono Input -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Mono Input</Name>
+   <URI>http://calf.sourceforge.net/plugins/MonoInput</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Input</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Output</Name>
+    <Symbol>level_out</Symbol>
+    <Value>0.473028808832169</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Balance</Name>
+    <Symbol>balance_out</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Softclip</Name>
+    <Symbol>softclip</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Mute L</Name>
+    <Symbol>mutel</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Mute R</Name>
+    <Symbol>muter</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Phase L</Name>
+    <Symbol>phasel</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Phase R</Name>
+    <Symbol>phaser</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Delay</Name>
+    <Symbol>delay</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Stereo Base</Name>
+    <Symbol>stereo_base</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Stereo Phase</Name>
+    <Symbol>stereo_phase</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>S/C Level</Name>
+    <Symbol>sc_level</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Filter -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Filter (Highpass)</Name>
+   <URI>http://calf.sourceforge.net/plugins/Filter</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Frequency</Name>
+    <Symbol>freq</Symbol>
+    <Value>30</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Resonance</Name>
+    <Symbol>res</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Mode</Name>
+    <Symbol>mode</Symbol>
+    <Value>4</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Inertia</Name>
+    <Symbol>inertia</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Input Gain</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Output Gain</Name>
+    <Symbol>level_out</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Filter -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Filter (Lowpass)</Name>
+   <URI>http://calf.sourceforge.net/plugins/Filter</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Frequency</Name>
+    <Symbol>freq</Symbol>
+    <Value>11000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Resonance</Name>
+    <Symbol>res</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Mode</Name>
+    <Symbol>mode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Inertia</Name>
+    <Symbol>inertia</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Input Gain</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Output Gain</Name>
+    <Symbol>level_out</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- LSP Autogain Stereo -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>LSP Autogain Stereo</Name>
+   <URI>http://lsp-plug.in/plugins/lv2/autogain_stereo</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Enabled</Name>
+    <Symbol>enabled</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Sidechain preamp</Name>
+    <Symbol>preamp</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Sidechain lookahead</Name>
+    <Symbol>lkahead</Symbol>
+    <Value>40</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Sidechain mode</Name>
+    <Symbol>scmode</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Sidechain metering enable for long period</Name>
+    <Symbol>e_sc_l</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Sidechain metering enable for short period</Name>
+    <Symbol>e_sc_s</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Loudness measuring long period</Name>
+    <Symbol>lperiod</Symbol>
+    <Value>2000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Loudness measuring short period</Name>
+    <Symbol>speriod</Symbol>
+    <Value>100</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Weighting function</Name>
+    <Symbol>weight</Symbol>
+    <Value>5</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Desired loudness level</Name>
+    <Symbol>level</Symbol>
+    <Value>-36</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Level drift</Name>
+    <Symbol>drift</Symbol>
+    <Value>12</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>The level of silence</Name>
+    <Symbol>silence</Symbol>
+    <Value>-72</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Enable maximum amplification gain limitation</Name>
+    <Symbol>max_on</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>The maximum amplification gain</Name>
+    <Symbol>max_amp</Symbol>
+    <Value>36</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Enable quick amplifier</Name>
+    <Symbol>qamp</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Long gain grow amount</Name>
+    <Symbol>vgrow_l</Symbol>
+    <Value>4</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>Long gain grow time</Name>
+    <Symbol>tgrow_l</Symbol>
+    <Value>6000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>Long gain fall amount</Name>
+    <Symbol>vfall_l</Symbol>
+    <Value>3</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>Long gain fall time</Name>
+    <Symbol>tfall_l</Symbol>
+    <Value>6000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>Short gain grow amount</Name>
+    <Symbol>vgrow_s</Symbol>
+    <Value>2</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>Short gain grow time</Name>
+    <Symbol>tgrow_s</Symbol>
+    <Value>40</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>Short gain fall amount</Name>
+    <Symbol>vfall_s</Symbol>
+    <Value>3</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>Short gain fall time</Name>
+    <Symbol>tfall_s</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>Input metering enable for long period</Name>
+    <Symbol>e_in_l</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>Input metering enable for short period</Name>
+    <Symbol>e_in_s</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>Output metering enable for long period</Name>
+    <Symbol>e_out_l</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>Output metering enable for short period</Name>
+    <Symbol>e_out_s</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>Gain correction metering</Name>
+    <Symbol>e_g</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#String</Type>
+    <Key>http://lsp-plug.in/plugins/lv2/autogain_stereo/ports#link</Key>
+    <Value></Value>
+   </CustomData>
+
+   <CustomData>
+    <Type>http://kxstudio.sf.net/ns/carla/property</Type>
+    <Key>CarlaSkinIsCompacted</Key>
+    <Value>false</Value>
+   </CustomData>
+  </Data>
+ </Plugin>
+
+ <Patchbay>
+  <Connection>
+   <Source>Audio Input:Left</Source>
+   <Target>Calf Mono Input:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Audio Input:Right</Source>
+   <Target>Calf Mono Input:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Mono Input:Out L</Source>
+   <Target>Calf Filter (Highpass):In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Mono Input:Out R</Source>
+   <Target>Calf Filter (Highpass):In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Highpass):Out L</Source>
+   <Target>Calf Filter (Lowpass):In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Highpass):Out R</Source>
+   <Target>Calf Filter (Lowpass):In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Lowpass):Out L</Source>
+   <Target>LSP Autogain Stereo:Input L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Lowpass):Out R</Source>
+   <Target>LSP Autogain Stereo:Input R</Target>
+  </Connection>
+  <Connection>
+   <Source>LSP Autogain Stereo:Output L</Source>
+   <Target>Audio Output:Left</Target>
+  </Connection>
+  <Connection>
+   <Source>LSP Autogain Stereo:Output R</Source>
+   <Target>Audio Output:Right</Target>
+  </Connection>
+  <Positions>
+   <Position x1="800" y1="80" pluginId="3">
+    <Name>LSP Autogain Stereo</Name>
+   </Position>
+   <Position x1="600" y1="80" pluginId="2">
+    <Name>Calf Filter (Lowpass)</Name>
+   </Position>
+   <Position x1="400" y1="80" pluginId="1">
+    <Name>Calf Filter (Highpass)</Name>
+   </Position>
+   <Position x1="200" y1="80" pluginId="0">
+    <Name>Calf Mono Input</Name>
+   </Position>
+   <Position x1="1500" y1="1400" x2="2900" y2="2300">
+    <Name>Midi Output</Name>
+   </Position>
+   <Position x1="2700" y1="2300" x2="1900" y2="1300">
+    <Name>Midi Input</Name>
+   </Position>
+   <Position x1="1400" y1="1200" x2="1000" y2="80">
+    <Name>Audio Output</Name>
+   </Position>
+   <Position x1="30" y1="80" x2="2000" y2="1200">
+    <Name>Audio Input</Name>
+   </Position>
+  </Positions>
+ </Patchbay>
+
+ <ExternalPatchbay>
+ </ExternalPatchbay>
+</CARLA-PROJECT>

@@ -1,0 +1,770 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE CARLA-PROJECT>
+<CARLA-PROJECT VERSION='2.2'>
+ <EngineSettings>
+  <ForceStereo>false</ForceStereo>
+  <PreferPluginBridges>false</PreferPluginBridges>
+  <PreferUiBridges>true</PreferUiBridges>
+  <UIsAlwaysOnTop>false</UIsAlwaysOnTop>
+  <MaxParameters>200</MaxParameters>
+  <UIBridgesTimeout>4000</UIBridgesTimeout>
+ </EngineSettings>
+
+ <Transport>
+  <BeatsPerMinute>120</BeatsPerMinute>
+ </Transport>
+
+ <!-- Calf Mono Input -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Mono Input</Name>
+   <URI>http://calf.sourceforge.net/plugins/MonoInput</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Input</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Output</Name>
+    <Symbol>level_out</Symbol>
+    <Value>0.473028808832169</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Balance</Name>
+    <Symbol>balance_out</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Softclip</Name>
+    <Symbol>softclip</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Mute L</Name>
+    <Symbol>mutel</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Mute R</Name>
+    <Symbol>muter</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Phase L</Name>
+    <Symbol>phasel</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Phase R</Name>
+    <Symbol>phaser</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Delay</Name>
+    <Symbol>delay</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>Stereo Base</Name>
+    <Symbol>stereo_base</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>Stereo Phase</Name>
+    <Symbol>stereo_phase</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>S/C Level</Name>
+    <Symbol>sc_level</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Filter -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Filter (Highpass)</Name>
+   <URI>http://calf.sourceforge.net/plugins/Filter</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Frequency</Name>
+    <Symbol>freq</Symbol>
+    <Value>30</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Resonance</Name>
+    <Symbol>res</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Mode</Name>
+    <Symbol>mode</Symbol>
+    <Value>4</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Inertia</Name>
+    <Symbol>inertia</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Input Gain</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Output Gain</Name>
+    <Symbol>level_out</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Filter -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Filter (Lowpass)</Name>
+   <URI>http://calf.sourceforge.net/plugins/Filter</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Frequency</Name>
+    <Symbol>freq</Symbol>
+    <Value>11000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Resonance</Name>
+    <Symbol>res</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Mode</Name>
+    <Symbol>mode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>Inertia</Name>
+    <Symbol>inertia</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>Input Gain</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Output Gain</Name>
+    <Symbol>level_out</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- master_me -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>master_me</Name>
+   <URI>https://github.com/trummerschlunk/master_me</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x0</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Enabled</Name>
+    <Symbol>lv2_enabled</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Target</Name>
+    <Symbol>target</Symbol>
+    <Value>-36</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>input gain</Name>
+    <Symbol>in_gain</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>3</Index>
+    <Name>phase L</Name>
+    <Symbol>phase_l</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>4</Index>
+    <Name>phase R</Name>
+    <Symbol>phase_r</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>5</Index>
+    <Name>mono</Name>
+    <Symbol>mono</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>dc blocker</Name>
+    <Symbol>dc_blocker</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>stereo correct</Name>
+    <Symbol>stereo_correct</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>gate bypass</Name>
+    <Symbol>gate_bypass</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>gate threshold</Name>
+    <Symbol>gate_threshold</Symbol>
+    <Value>-90</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>gate attack</Name>
+    <Symbol>gate_attack</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>gate hold</Name>
+    <Symbol>gate_hold</Symbol>
+    <Value>50</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>gate release</Name>
+    <Symbol>gate_release</Symbol>
+    <Value>430.5</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>eq bypass</Name>
+    <Symbol>eq_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>eq highpass freq</Name>
+    <Symbol>eq_highpass_freq</Symbol>
+    <Value>5</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>eq tilt gain</Name>
+    <Symbol>eq_tilt_gain</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>eq side gain</Name>
+    <Symbol>eq_side_gain</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>eq side freq</Name>
+    <Symbol>eq_side_freq</Symbol>
+    <Value>600</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>eq side bandwidth</Name>
+    <Symbol>eq_side_bandwidth</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>leveler bypass</Name>
+    <Symbol>leveler_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>leveler speed</Name>
+    <Symbol>leveler_speed</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>leveler brake threshold</Name>
+    <Symbol>leveler_brake_threshold</Symbol>
+    <Value>-10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>leveler max +</Name>
+    <Symbol>leveler_max_plus</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>leveler max -</Name>
+    <Symbol>leveler_max_minus</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>kneecomp bypass</Name>
+    <Symbol>kneecomp_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>kneecomp strength</Name>
+    <Symbol>kneecomp_strength</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>kneecomp tar-thresh</Name>
+    <Symbol>kneecomp_threshold</Symbol>
+    <Value>-4</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>kneecomp attack</Name>
+    <Symbol>kneecomp_attack</Symbol>
+    <Value>20</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>kneecomp release</Name>
+    <Symbol>kneecomp_release</Symbol>
+    <Value>340</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>kneecomp knee</Name>
+    <Symbol>kneecomp_knee</Symbol>
+    <Value>6</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>30</Index>
+    <Name>kneecomp link</Name>
+    <Symbol>kneecomp_link</Symbol>
+    <Value>60</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>31</Index>
+    <Name>kneecomp ff-fb</Name>
+    <Symbol>kneecomp_fffb</Symbol>
+    <Value>50</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>32</Index>
+    <Name>kneecomp makeup</Name>
+    <Symbol>kneecomp_makeup</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>33</Index>
+    <Name>kneecomp dry/wet</Name>
+    <Symbol>kneecomp_drywet</Symbol>
+    <Value>50</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>34</Index>
+    <Name>mscomp bypass</Name>
+    <Symbol>mscomp_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>35</Index>
+    <Name>low strength</Name>
+    <Symbol>mscomp_low_strength</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>36</Index>
+    <Name>low tar-thresh</Name>
+    <Symbol>mscomp_low_threshold</Symbol>
+    <Value>-3</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>37</Index>
+    <Name>low attack</Name>
+    <Symbol>mscomp_low_attack</Symbol>
+    <Value>15</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>38</Index>
+    <Name>low release</Name>
+    <Symbol>mscomp_low_release</Symbol>
+    <Value>150</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>39</Index>
+    <Name>low knee</Name>
+    <Symbol>mscomp_low_knee</Symbol>
+    <Value>12</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>40</Index>
+    <Name>low link</Name>
+    <Symbol>mscomp_low_link</Symbol>
+    <Value>70</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>41</Index>
+    <Name>low crossover</Name>
+    <Symbol>mscomp_low_crossover</Symbol>
+    <Value>60</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>42</Index>
+    <Name>high strength</Name>
+    <Symbol>mscomp_high_strength</Symbol>
+    <Value>30</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>43</Index>
+    <Name>high tar-thresh</Name>
+    <Symbol>mscomp_high_threshold</Symbol>
+    <Value>-12</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>44</Index>
+    <Name>high attack</Name>
+    <Symbol>mscomp_high_attack</Symbol>
+    <Value>8</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>45</Index>
+    <Name>high release</Name>
+    <Symbol>mscomp_high_release</Symbol>
+    <Value>30</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>46</Index>
+    <Name>high knee</Name>
+    <Symbol>mscomp_high_knee</Symbol>
+    <Value>12</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>47</Index>
+    <Name>high link</Name>
+    <Symbol>mscomp_high_link</Symbol>
+    <Value>30</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>48</Index>
+    <Name>high crossover</Name>
+    <Symbol>mscomp_high_crossover</Symbol>
+    <Value>8000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>49</Index>
+    <Name>makeup</Name>
+    <Symbol>mscomp_output_gain</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>50</Index>
+    <Name>limiter bypass</Name>
+    <Symbol>limiter_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>51</Index>
+    <Name>limiter strength</Name>
+    <Symbol>limiter_strength</Symbol>
+    <Value>80</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>52</Index>
+    <Name>limiter tar-thresh</Name>
+    <Symbol>limiter_threshold</Symbol>
+    <Value>6</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>53</Index>
+    <Name>limiter attack</Name>
+    <Symbol>limiter_attack</Symbol>
+    <Value>3</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>54</Index>
+    <Name>limiter release</Name>
+    <Symbol>limiter_release</Symbol>
+    <Value>40</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>55</Index>
+    <Name>limiter knee</Name>
+    <Symbol>limiter_knee</Symbol>
+    <Value>3</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>56</Index>
+    <Name>limiter ff-fb</Name>
+    <Symbol>limiter_fffb</Symbol>
+    <Value>50</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>57</Index>
+    <Name>limiter makeup</Name>
+    <Symbol>limiter_makeup</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>58</Index>
+    <Name>brickwall bypass</Name>
+    <Symbol>brickwall_bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>59</Index>
+    <Name>brickwall ceiling</Name>
+    <Symbol>brickwall_ceiling</Symbol>
+    <Value>-1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>60</Index>
+    <Name>brickwall release</Name>
+    <Symbol>brickwall_release</Symbol>
+    <Value>75</Value>
+   </Parameter>
+
+   <CustomData>
+    <Type>http://lv2plug.in/ns/ext/atom#String</Type>
+    <Key>https://github.com/trummerschlunk/master_me#mode</Key>
+    <Value>easy</Value>
+   </CustomData>
+  </Data>
+ </Plugin>
+
+ <Patchbay>
+  <Connection>
+   <Source>Audio Input:Left</Source>
+   <Target>Calf Mono Input:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Audio Input:Right</Source>
+   <Target>Calf Mono Input:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Mono Input:Out L</Source>
+   <Target>Calf Filter (Highpass):In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Mono Input:Out R</Source>
+   <Target>Calf Filter (Highpass):In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Highpass):Out L</Source>
+   <Target>Calf Filter (Lowpass):In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Highpass):Out R</Source>
+   <Target>Calf Filter (Lowpass):In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Lowpass):Out L</Source>
+   <Target>master_me:Audio Input 1</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Filter (Lowpass):Out R</Source>
+   <Target>master_me:Audio Input 2</Target>
+  </Connection>
+  <Connection>
+   <Source>master_me:Audio Output 1</Source>
+   <Target>Audio Output:Left</Target>
+  </Connection>
+  <Connection>
+   <Source>master_me:Audio Output 2</Source>
+   <Target>Audio Output:Right</Target>
+  </Connection>
+  <Positions>
+   <Position x1="797" y1="80" pluginId="3">
+    <Name>master_me</Name>
+   </Position>
+   <Position x1="600" y1="80" pluginId="2">
+    <Name>Calf Filter (Lowpass)</Name>
+   </Position>
+   <Position x1="400" y1="80" pluginId="1">
+    <Name>Calf Filter (Highpass)</Name>
+   </Position>
+   <Position x1="200" y1="80" pluginId="0">
+    <Name>Calf Mono Input</Name>
+   </Position>
+   <Position x1="1500" y1="1400" x2="2900" y2="2300">
+    <Name>Midi Output</Name>
+   </Position>
+   <Position x1="2700" y1="2300" x2="1900" y2="1300">
+    <Name>Midi Input</Name>
+   </Position>
+   <Position x1="1400" y1="1200" x2="1020" y2="80">
+    <Name>Audio Output</Name>
+   </Position>
+   <Position x1="30" y1="80" x2="2000" y2="1200">
+    <Name>Audio Input</Name>
+   </Position>
+  </Positions>
+ </Patchbay>
+
+ <ExternalPatchbay>
+ </ExternalPatchbay>
+</CARLA-PROJECT>
