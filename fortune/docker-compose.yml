@@ -1,8 +1,8 @@
 services:
-  tf2-radio:
-    image: tf2-radio:latest
+  tf2-fortune:
+    image: tf2-tts-piper:latest
     build: .
-    container_name: tf2-radio
+    container_name: tf2-fortune
     environment:
       PULSE_SERVER: unix:/run/user/${UID}/pulse/native
     volumes:
@@ -11,13 +11,14 @@ services:
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
-      - ./index.html:/tts/index.html:ro
-      - ./chat_radio.py:/tts/chat_radio.py:ro
-      - ./queue:/tts/queue
+      - ./chat_fortune.sh:/tts/chat_fortune.sh:ro
+      - ./fortunes.txt:/tts/fortunes.txt:ro
+      - ./models:/tts/models:ro
     devices:
       - /dev/snd
     ports:
-      - "8000:8000"
+      - "5000:5000"
+    network_mode: none
     security_opt:
       - "no-new-privileges=true"
     cap_drop:

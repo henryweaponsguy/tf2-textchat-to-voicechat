@@ -37,16 +37,16 @@ download_queue_file="/tmp/download_queue.txt"
 paplay_pid_file="/tmp/paplay.pid"
 queue_pid_file="/tmp/queue.pid"
 queue_dir="${script_dir}/queue"
-queue_file="${script_dir}/queue.txt"
-skip_vote_file="${script_dir}/skip_votes.txt"
+queue_file="${queue_dir}/queue.txt"
+recently_played_history_file="${queue_dir}/recently_played_history.txt"
+skip_vote_file="/tmp/skip_votes.txt"
 skip_voting_open_state_file="/tmp/skip_voting.open"
-recently_played_history_file="${script_dir}/recently_played_history.txt"
 
 mkdir -p "$queue_dir"
 touch "$download_queue_file"
 touch "$queue_file"
-touch "$skip_vote_file"
 touch "$recently_played_history_file"
+touch "$skip_vote_file"
 
 
 # Add '-condebug' to TF2's launch parameters.
@@ -55,7 +55,7 @@ touch "$recently_played_history_file"
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
 blacklisted_names=""
 
 # Alternatively, a whitelist:
@@ -70,6 +70,8 @@ speak_text() {
     local text="$1"
 
     local announcer_pid=$(cat "$announcer_pid_file" 2>/dev/null)
+
+    # Stop the previous announcement
     if [ -n "$announcer_pid" ]; then
         kill "$announcer_pid" 2>/dev/null
     fi
@@ -415,7 +417,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  !\(queue \|skip\)" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?[^:]\+ :  !\(queue\|skip\) \*" |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     # Keep messages only from whitelisted players

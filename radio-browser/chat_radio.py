@@ -34,8 +34,11 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 
 
 # Queue management files
-queue_file = script_dir / "queue.txt"
-recently_played_history_file = script_dir / "recently_played_history.txt"
+queue_dir = script_dir / "queue"
+queue_file = queue_dir / "queue.txt"
+recently_played_history_file = queue_dir / "recently_played_history.txt"
+
+queue_dir.mkdir(parents=True, exist_ok=True)
 
 for file in [queue_file, recently_played_history_file]:
     if not file.exists():
@@ -72,7 +75,7 @@ skip_voting_open = False
 skip_vote_list = set()
 
 re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) ?(.+)?"
+    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) *(.+)?"
 )
 re_blacklisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
@@ -165,6 +168,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def speak_text(text):
+    global announcer_process
+
     if not text:
         return
 
@@ -189,7 +194,6 @@ def speak_text(text):
             file.write(response.read())
 
         # Stop the previous announcement
-        global announcer_process
         if announcer_process and announcer_process.poll() is None:
             announcer_process.terminate()
 
@@ -213,6 +217,9 @@ def speak_text(text):
 
 
 def add_to_queue(video_id):
+    global current_video
+    global sse_client
+
     # Check if the video is queued already
     with radio_lock:
         queued_files = dict(
@@ -232,35 +239,42 @@ def add_to_queue(video_id):
             f"\033[32m{'File recently played:':<25}{recently_played_files[video_id]}\033[0m"
         )
     else:
-        # Get the video's title and channel
-        yt_dlp_output = subprocess.run(
-            [
-                "yt-dlp",
-                "--js-runtimes",
-                "deno:/root/.deno/bin/deno",
-                "--add-headers",
-                "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-                "--limit-rate",
-                "500K",
-                "--skip-download",
-                "--no-warnings",
-                "-o",
-                "%(title)s",
-                "--print-json",
-                video_id,
-            ],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            # Get the video's title and channel
+            yt_dlp_output = subprocess.run(
+                [
+                    "yt-dlp",
+                    "--js-runtimes",
+                    "deno:/root/.deno/bin/deno",
+                    "--add-headers",
+                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                    "--limit-rate",
+                    "500K",
+                    "--skip-download",
+                    "--no-warnings",
+                    "-o",
+                    "%(title)s",
+                    "--print-json",
+                    video_id,
+                ],
+                capture_output=True,
+                text=True,
+            )
 
-        video_info = json.loads(yt_dlp_output.stdout)
-        title = video_info["filename"]
-        channel = video_info["channel"]
+            video_info = json.loads(yt_dlp_output.stdout)
+            title = video_info["filename"]
+            channel = video_info["channel"]
+        except json.JSONDecodeError:
+            print(
+                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video info'}\033[0m"
+            )
+            return
 
         print(f"{'Queued:':<25}{video_id}")
         print(f"{'Title:':<25}{title}")
         print(f"{'Channel:':<25}{channel}")
         print(f"{'Queued by:':<25}{username}")
+        print()
 
         recently_played_history_length = 5
 
@@ -287,7 +301,21 @@ def add_to_queue(video_id):
             radio_idle = current_video is None
 
         if radio_idle:
-            play_next()
+            with radio_lock:
+                client = sse_client
+
+                if client is None:
+                    return
+
+            try:
+                # Notify the web client the queue is populated
+                client.wfile.write((f"event: ensure_playback\n\n").encode("utf-8"))
+                client.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                # If the connection is broken, clear the web client
+                with radio_lock:
+                    if sse_client is client:
+                        sse_client = None
 
 
 def play_next():
@@ -315,6 +343,8 @@ def play_next():
             file.write(rest)
             file.truncate()
 
+        current_video = video_id
+
     print(f"\033[33m{'Now playing:':<25}{title}\033[0m")
 
     for pattern, replacement in replacements:
@@ -327,8 +357,6 @@ def play_next():
         skip_vote_list.clear()
 
         skip_voting_open = True
-
-        current_video = video_id
 
     try:
         # Send the video ID to the web client

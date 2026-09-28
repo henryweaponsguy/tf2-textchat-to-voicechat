@@ -328,7 +328,7 @@
     <Index>11</Index>
     <Name>Desired loudness level</Name>
     <Symbol>level</Symbol>
-    <Value>-36</Value>
+    <Value>-40</Value>
    </Parameter>
 
    <Parameter>
@@ -370,7 +370,7 @@
     <Index>17</Index>
     <Name>Long gain grow amount</Name>
     <Symbol>vgrow_l</Symbol>
-    <Value>4</Value>
+    <Value>3</Value>
    </Parameter>
 
    <Parameter>

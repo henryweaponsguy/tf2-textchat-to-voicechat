@@ -14,6 +14,7 @@ services:
       - ./index.html:/tts/index.html:ro
       - ./chat_radio.py:/tts/chat_radio.py:ro
       - ./models:/tts/models:ro
+      - ./queue:/tts/queue
     devices:
       - /dev/snd
     ports:

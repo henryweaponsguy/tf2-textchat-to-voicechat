@@ -272,7 +272,7 @@
     <Index>1</Index>
     <Name>Target</Name>
     <Symbol>target</Symbol>
-    <Value>-36</Value>
+    <Value>-40</Value>
    </Parameter>
 
    <Parameter>
@@ -307,7 +307,7 @@
     <Index>6</Index>
     <Name>dc blocker</Name>
     <Symbol>dc_blocker</Symbol>
-    <Value>0</Value>
+    <Value>1</Value>
    </Parameter>
 
    <Parameter>
@@ -335,7 +335,7 @@
     <Index>10</Index>
     <Name>gate attack</Name>
     <Symbol>gate_attack</Symbol>
-    <Value>0</Value>
+    <Value>1</Value>
    </Parameter>
 
    <Parameter>
@@ -349,7 +349,7 @@
     <Index>12</Index>
     <Name>gate release</Name>
     <Symbol>gate_release</Symbol>
-    <Value>430.5</Value>
+    <Value>500</Value>
    </Parameter>
 
    <Parameter>
@@ -363,7 +363,7 @@
     <Index>14</Index>
     <Name>eq highpass freq</Name>
     <Symbol>eq_highpass_freq</Symbol>
-    <Value>5</Value>
+    <Value>20</Value>
    </Parameter>
 
    <Parameter>
@@ -377,7 +377,7 @@
     <Index>16</Index>
     <Name>eq side gain</Name>
     <Symbol>eq_side_gain</Symbol>
-    <Value>1</Value>
+    <Value>0</Value>
    </Parameter>
 
    <Parameter>
@@ -405,70 +405,70 @@
     <Index>20</Index>
     <Name>leveler speed</Name>
     <Symbol>leveler_speed</Symbol>
-    <Value>20</Value>
+    <Value>40</Value>
    </Parameter>
 
    <Parameter>
     <Index>21</Index>
     <Name>leveler brake threshold</Name>
     <Symbol>leveler_brake_threshold</Symbol>
-    <Value>-10</Value>
+    <Value>-20</Value>
    </Parameter>
 
    <Parameter>
     <Index>22</Index>
     <Name>leveler max +</Name>
     <Symbol>leveler_max_plus</Symbol>
-    <Value>10</Value>
+    <Value>30</Value>
    </Parameter>
 
    <Parameter>
     <Index>23</Index>
     <Name>leveler max -</Name>
     <Symbol>leveler_max_minus</Symbol>
-    <Value>10</Value>
+    <Value>30</Value>
    </Parameter>
 
    <Parameter>
     <Index>24</Index>
     <Name>kneecomp bypass</Name>
     <Symbol>kneecomp_bypass</Symbol>
-    <Value>0</Value>
+    <Value>1</Value>
    </Parameter>
 
    <Parameter>
     <Index>25</Index>
     <Name>kneecomp strength</Name>
     <Symbol>kneecomp_strength</Symbol>
-    <Value>20</Value>
+    <Value>15</Value>
    </Parameter>
 
    <Parameter>
     <Index>26</Index>
     <Name>kneecomp tar-thresh</Name>
     <Symbol>kneecomp_threshold</Symbol>
-    <Value>-4</Value>
+    <Value>-6</Value>
    </Parameter>
 
    <Parameter>
     <Index>27</Index>
     <Name>kneecomp attack</Name>
     <Symbol>kneecomp_attack</Symbol>
-    <Value>20</Value>
+    <Value>5</Value>
    </Parameter>
 
    <Parameter>
     <Index>28</Index>
     <Name>kneecomp release</Name>
     <Symbol>kneecomp_release</Symbol>
-    <Value>340</Value>
+    <Value>50</Value>
    </Parameter>
 
    <Parameter>
     <Index>29</Index>
     <Name>kneecomp knee</Name>
     <Symbol>kneecomp_knee</Symbol>
-    <Value>6</Value>
+    <Value>9</Value>
    </Parameter>
 
    <Parameter>
@@ -510,28 +510,28 @@
     <Index>35</Index>
     <Name>low strength</Name>
     <Symbol>mscomp_low_strength</Symbol>
-    <Value>10</Value>
+    <Value>20</Value>
    </Parameter>
 
    <Parameter>
     <Index>36</Index>
     <Name>low tar-thresh</Name>
     <Symbol>mscomp_low_threshold</Symbol>
-    <Value>-3</Value>
+    <Value>-6</Value>
    </Parameter>
 
    <Parameter>
     <Index>37</Index>
     <Name>low attack</Name>
     <Symbol>mscomp_low_attack</Symbol>
-    <Value>15</Value>
+    <Value>10</Value>
    </Parameter>
 
    <Parameter>
     <Index>38</Index>
     <Name>low release</Name>
     <Symbol>mscomp_low_release</Symbol>
-    <Value>150</Value>
+    <Value>80</Value>
    </Parameter>
 
    <Parameter>
@@ -559,28 +559,28 @@
     <Index>42</Index>
     <Name>high strength</Name>
     <Symbol>mscomp_high_strength</Symbol>
-    <Value>30</Value>
+    <Value>40</Value>
    </Parameter>
 
    <Parameter>
     <Index>43</Index>
     <Name>high tar-thresh</Name>
     <Symbol>mscomp_high_threshold</Symbol>
-    <Value>-12</Value>
+    <Value>-8</Value>
    </Parameter>
 
    <Parameter>
     <Index>44</Index>
     <Name>high attack</Name>
     <Symbol>mscomp_high_attack</Symbol>
-    <Value>8</Value>
+    <Value>0</Value>
    </Parameter>
 
    <Parameter>
     <Index>45</Index>
     <Name>high release</Name>
     <Symbol>mscomp_high_release</Symbol>
-    <Value>30</Value>
+    <Value>50</Value>
    </Parameter>
 
    <Parameter>
@@ -629,14 +629,14 @@
     <Index>52</Index>
     <Name>limiter tar-thresh</Name>
     <Symbol>limiter_threshold</Symbol>
-    <Value>6</Value>
+    <Value>3</Value>
    </Parameter>
 
    <Parameter>
     <Index>53</Index>
     <Name>limiter attack</Name>
     <Symbol>limiter_attack</Symbol>
-    <Value>3</Value>
+    <Value>1</Value>
    </Parameter>
 
    <Parameter>

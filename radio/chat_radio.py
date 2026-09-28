@@ -34,8 +34,8 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 # Queue management files
 download_queue_file = Path(tempfile.gettempdir()) / "download_queue.txt"
 queue_dir = script_dir / "queue"
-queue_file = script_dir / "queue.txt"
-recently_played_history_file = script_dir / "recently_played_history.txt"
+queue_file = queue_dir / "queue.txt"
+recently_played_history_file = queue_dir / "recently_played_history.txt"
 
 queue_dir.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +71,7 @@ skip_voting_open = False
 skip_vote_list = set()
 
 re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) ?(.+)?"
+    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) *(.+)?"
 )
 re_blacklisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
@@ -99,6 +99,8 @@ replacements = [
 
 
 def speak_text(text):
+    global announcer_process
+
     if not text:
         return
 
@@ -123,7 +125,6 @@ def speak_text(text):
             file.write(response.read())
 
         # Stop the previous announcement
-        global announcer_process
         if announcer_process and announcer_process.poll() is None:
             announcer_process.terminate()
 
@@ -158,31 +159,37 @@ def download_file(video_id, username):
         audio_file = matched_files[0]
         print(f"{'Already downloaded:':<25}{audio_file.stem}")
     else:
-        # Get the video's filename, title and channel
-        yt_dlp_output = subprocess.run(
-            [
-                "yt-dlp",
-                "--js-runtimes",
-                "deno:/root/.deno/bin/deno",
-                "--add-headers",
-                "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-                "--limit-rate",
-                "500K",
-                "--skip-download",
-                "--no-warnings",
-                "-o",
-                "%(title)s",
-                "--print-json",
-                video_id,
-            ],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            # Get the video's filename, title and channel
+            yt_dlp_output = subprocess.run(
+                [
+                    "yt-dlp",
+                    "--js-runtimes",
+                    "deno:/root/.deno/bin/deno",
+                    "--add-headers",
+                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                    "--limit-rate",
+                    "500K",
+                    "--skip-download",
+                    "--no-warnings",
+                    "-o",
+                    "%(title)s",
+                    "--print-json",
+                    video_id,
+                ],
+                capture_output=True,
+                text=True,
+            )
 
-        video_info = json.loads(yt_dlp_output.stdout)
-        title = video_info["filename"]
-        channel = video_info["channel"]
-        audio_file = queue_dir / f"{title} ({video_id}).{audio_format}"
+            video_info = json.loads(yt_dlp_output.stdout)
+            title = video_info["filename"]
+            channel = video_info["channel"]
+            audio_file = queue_dir / f"{title} ({video_id}).{audio_format}"
+        except json.JSONDecodeError:
+            print(
+                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video info'}\033[0m"
+            )
+            return
 
         print(f"{'Title:':<25}{title}")
         print(f"{'Channel:':<25}{channel}")
@@ -212,75 +219,133 @@ def download_file(video_id, username):
 
         # Check if the file has been downloaded successfully
         if not audio_file.exists():
-            audio_file = ""
             print(f"{'Video unavailable:':<25}{title}")
-        else:
-            # Normalization parameters
-            lufs = -23
-            tolerance = -1.0
-            loudness_range = 9
-            target_peak = -9
-            peak_tolerance = 0.3
+            return
 
-            temp_file = Path(f"tmp.{audio_format}")
+        # Normalization parameters
+        lufs = -23
+        tolerance = -1.0
+        loudness_range = 9
+        target_peak = -9
+        peak_tolerance = 0.3
 
-            # Get codec, sample rate, channel count and duration
-            ffprobe_output = subprocess.run(
+        temp_file = Path(f"tmp.{audio_format}")
+
+        # Get codec, sample rate, channel count and duration
+        ffprobe_output = subprocess.run(
+            [
+                "ffprobe",
+                "-hide_banner",
+                "-v",
+                "error",
+                "-select_streams",
+                "a:0",
+                "-show_entries",
+                "stream=codec_name,sample_rate,channels",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "json",
+                str(audio_file),
+            ],
+            capture_output=True,
+            text=True,
+        ).stdout
+
+        file_info = json.loads(ffprobe_output)
+        codec = file_info["streams"][0].get("codec_name")
+        sample_rate = file_info["streams"][0].get("sample_rate")
+        channels = file_info["streams"][0].get("channels")
+        duration = float(file_info["format"].get("duration"))
+
+        if codec == "opus":
+            codec = "libopus"
+
+        # LUFS normalization cannot be calculated for very short files, use peak normalization instead
+        if duration < 0.4:
+            # Analyze the file
+            analysis_output = subprocess.run(
                 [
-                    "ffprobe",
+                    "ffmpeg",
                     "-hide_banner",
-                    "-v",
-                    "error",
-                    "-select_streams",
-                    "a:0",
-                    "-show_entries",
-                    "stream=codec_name,sample_rate,channels",
-                    "-show_entries",
-                    "format=duration",
-                    "-of",
-                    "json",
+                    "-loglevel",
+                    "info",
+                    "-i",
                     str(audio_file),
+                    "-filter:a",
+                    "volumedetect",
+                    "-f",
+                    "null",
+                    "-",
                 ],
                 capture_output=True,
                 text=True,
-            ).stdout
+            ).stderr
 
-            file_info = json.loads(ffprobe_output)
-            codec = file_info["streams"][0].get("codec_name")
-            sample_rate = file_info["streams"][0].get("sample_rate")
-            channels = file_info["streams"][0].get("channels")
-            duration = float(file_info["format"].get("duration"))
+            current_peak = float(
+                re.search(r"max_volume: +(.+) +dB", analysis_output).group(1)
+            )
+            gain = target_peak - current_peak
 
-            if codec == "opus":
-                codec = "libopus"
+            # Normalize the file
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-i",
+                    str(audio_file),
+                    "-filter:a",
+                    f"volume={gain}dB",
+                    "-acodec",
+                    codec,
+                    "-ar",
+                    sample_rate,
+                    "-ac",
+                    channels,
+                    str(temp_file),
+                ]
+            )
 
-            # LUFS normalization cannot be calculated for very short files, use peak normalization instead
-            if duration < 0.4:
-                # Analyze the file
-                analysis_output = subprocess.run(
-                    [
-                        "ffmpeg",
-                        "-hide_banner",
-                        "-loglevel",
-                        "info",
-                        "-i",
-                        str(audio_file),
-                        "-filter:a",
-                        "volumedetect",
-                        "-f",
-                        "null",
-                        "-",
-                    ],
-                    capture_output=True,
-                    text=True,
-                ).stderr
+            temp_file.replace(audio_file)
+        else:
+            # Analyze the file
+            analysis_output = subprocess.run(
+                [
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-loglevel",
+                    "info",
+                    "-i",
+                    str(audio_file),
+                    "-filter:a",
+                    (
+                        "loudnorm="
+                        f"I={lufs}:"
+                        f"TP={tolerance}:"
+                        f"LRA={loudness_range}:"
+                        "print_format=json"
+                    ),
+                    "-f",
+                    "null",
+                    "-",
+                ],
+                capture_output=True,
+                text=True,
+            ).stderr
 
-                current_peak = float(
-                    re.search(r"max_volume: +(.+) +dB", analysis_output).group(1)
-                )
-                gain = target_peak - current_peak
+            file_parameters = json.loads(
+                re.search(r"\{[\s\S]*\}", analysis_output).group(0)
+            )
+            input_i = file_parameters["input_i"]
+            input_tp = file_parameters["input_tp"]
+            input_lra = file_parameters["input_lra"]
+            input_thresh = file_parameters["input_thresh"]
 
-                # Normalize the file
+            # Skip silent files
+            if input_i != "-inf":
+                # Remove silence from the beginning and the end of the file and normalize it
                 subprocess.run(
                     [
                         "ffmpeg",
@@ -290,7 +355,17 @@ def download_file(video_id, username):
                         "-i",
                         str(audio_file),
                         "-filter:a",
-                        f"volume={gain}dB",
+                        (
+                            "loudnorm="
+                            f"I={lufs}:"
+                            f"TP={tolerance}:"
+                            f"LRA={loudness_range}:"
+                            "linear=true:"
+                            f"measured_I={input_i}:"
+                            f"measured_LRA={input_lra}:"
+                            f"measured_tp={input_tp}:"
+                            f"measured_thresh={input_thresh}"
+                        ),
                         "-acodec",
                         codec,
                         "-ar",
@@ -302,76 +377,8 @@ def download_file(video_id, username):
                 )
 
                 temp_file.replace(audio_file)
-            else:
-                # Analyze the file
-                analysis_output = subprocess.run(
-                    [
-                        "ffmpeg",
-                        "-hide_banner",
-                        "-loglevel",
-                        "info",
-                        "-i",
-                        str(audio_file),
-                        "-filter:a",
-                        (
-                            "loudnorm="
-                            f"I={lufs}:"
-                            f"TP={tolerance}:"
-                            f"LRA={loudness_range}:"
-                            "print_format=json"
-                        ),
-                        "-f",
-                        "null",
-                        "-",
-                    ],
-                    capture_output=True,
-                    text=True,
-                ).stderr
 
-                file_parameters = json.loads(
-                    re.search(r"\{[\s\S]*\}", analysis_output).group(0)
-                )
-                input_i = file_parameters["input_i"]
-                input_tp = file_parameters["input_tp"]
-                input_lra = file_parameters["input_lra"]
-                input_thresh = file_parameters["input_thresh"]
-
-                # Skip silent files
-                if input_i != "-inf":
-                    # Remove silence from the beginning and the end of the file and normalize it
-                    subprocess.run(
-                        [
-                            "ffmpeg",
-                            "-hide_banner",
-                            "-loglevel",
-                            "error",
-                            "-i",
-                            str(audio_file),
-                            "-filter:a",
-                            (
-                                "loudnorm="
-                                f"I={lufs}:"
-                                f"TP={tolerance}:"
-                                f"LRA={loudness_range}:"
-                                "linear=true:"
-                                f"measured_I={input_i}:"
-                                f"measured_LRA={input_lra}:"
-                                f"measured_tp={input_tp}:"
-                                f"measured_thresh={input_thresh}"
-                            ),
-                            "-acodec",
-                            codec,
-                            "-ar",
-                            sample_rate,
-                            "-ac",
-                            channels,
-                            str(temp_file),
-                        ]
-                    )
-
-                    temp_file.replace(audio_file)
-
-            print(f"{'Downloaded:':<25}{audio_file.stem}")
+        print(f"{'Downloaded:':<25}{audio_file.stem}")
 
     return audio_file
 

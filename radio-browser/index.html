@@ -20,6 +20,10 @@
         player.stopVideo();
       });
 
+      events.addEventListener("ensure_playback", () => {
+        if (player.getPlayerState() === YT.PlayerState.ENDED) requestNext();
+      });
+
       function requestNext() {
         fetch("/radio", {
           method: "POST",
