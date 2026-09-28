@@ -6,11 +6,13 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 ### Available scripts
 
-`kill-announcer` - reads a message aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl) when a target player dies
+`fortune` - reads a random fortune cookie fortune (from the `fortunes.txt` file) aloud
+
+`kill-announcer` - reads a custom message aloud when a target player dies
 
 `kill-sound` - plays a sound (from the `sounds/` directory) when a target player dies
 
-`narrator` - reads text messages aloud using [Piper](https://github.com/OHF-Voice/piper1-gpl). Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
+`narrator` - reads text messages aloud. Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
 
 `notifications` - plays a notification sound (from the `sounds/` directory) when a player sends a text message
 
