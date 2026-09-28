@@ -44,7 +44,7 @@ touch "$vote_file"
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
 blacklisted_names=""
 
 # Alternatively, a whitelist:
@@ -55,7 +55,7 @@ whitelisted_names=""
 blacklisted_words=""
 
 # Whitelist for starting a poll:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
 whitelisted_poll_names=""
 
 

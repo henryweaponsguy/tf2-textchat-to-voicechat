@@ -6,7 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Target list:
 declare -A kill_messages=(
     # Example: ["John"]="John is gone!|John died. Shit happens."
-    # Example: ["pablo.gonzales.2007"]="pablo is down!|pablo got owned!"
+    # Example: ["pablo\.gonzales\.2007"]="pablo is down!|pablo got owned!"
     # Example: ["Engineer Gaming"]="the grease monkey bites the dust!"
 )
 

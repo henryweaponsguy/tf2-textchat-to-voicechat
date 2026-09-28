@@ -6,7 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Target list:
 declare -A user_directories=(
     # Example: ["John"]="john"
-    # Example: ["pablo.gonzales.2007"]="pablo"
+    # Example: ["pablo\.gonzales\.2007"]="pablo"
     # Example: ["Engineer Gaming"]="engineer gaming"
 )
 

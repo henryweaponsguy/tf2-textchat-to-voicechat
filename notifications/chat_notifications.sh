@@ -12,7 +12,7 @@ sound_dir="${script_dir}/sounds"
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo.gonzales.2007\|Engineer Gaming"
+# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
 blacklisted_names=""
 
 # Alternatively, a whitelist:
