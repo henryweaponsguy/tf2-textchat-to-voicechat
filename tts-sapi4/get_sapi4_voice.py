@@ -68,12 +68,10 @@ def speak_text(text):
         }
 
         query_string = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-        full_url = f"{sapi4_server}/SAPI4/SAPI4?{query_string}"
+        url = f"{sapi4_server}/SAPI4/SAPI4?{query_string}"
 
-        with urllib.request.urlopen(full_url) as response:
-            response_content = response.read()
-
-        Path(audio_file).write_bytes(response_content)
+        with urllib.request.urlopen(url) as response, open(audio_file, "wb") as file:
+            file.write(response.read())
 
         subprocess.run(
             ["paplay", "--device=virtual_speaker", "--client-name=sapi4", audio_file],

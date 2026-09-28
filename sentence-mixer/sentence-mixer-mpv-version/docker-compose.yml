@@ -1,6 +1,6 @@
 services:
   tf2-sentence-mixer:
-    image: tf2-sentence-mixer:latest
+    image: tf2-sentence-mixer-mpv:latest
     build: .
     container_name: tf2-sentence-mixer
     environment:
