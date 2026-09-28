@@ -12,7 +12,7 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 `kill-sound` - plays a sound (from the `sounds/` directory) when a target player dies
 
-`narrator` - reads text messages aloud. Assigns voices to usernames so each user always sounds the same (requires downloading a voice model before running)
+`narrator` - reads text messages aloud. Assigns voices to usernames so each user always sounds the same
 
 `notifications` - plays a notification sound (from the `sounds/` directory) when a player sends a text message
 
