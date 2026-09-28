@@ -434,7 +434,12 @@ with open(console_log, "r") as log:
         video_url = matched_command.group(5)
 
         if selected_command == "queue" and video_url:
-            video_id = re_url.match(video_url).group(4)
+            # Check if the video ID is valid
+            video_url_match = re_url.match(video_url)
+            if not video_url_match:
+                continue
+
+            video_id = video_url_match.group(4)
 
             Thread(
                 target=add_to_queue,
