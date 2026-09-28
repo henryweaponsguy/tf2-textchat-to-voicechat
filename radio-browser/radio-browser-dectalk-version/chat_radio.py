@@ -206,6 +206,12 @@ def speak_text(text):
 
 
 def add_to_queue(video_id):
+    global current_video
+    global sse_client
+
+    print(f"{'Downloading:':<25}{video_id}")
+    print(f"{'Queued by:':<25}{username}")
+
     # Check if the video is queued already
     with radio_lock:
         queued_files = dict(
@@ -252,14 +258,12 @@ def add_to_queue(video_id):
             channel = video_info["channel"]
         except json.JSONDecodeError:
             print(
-                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video info'}\033[0m"
+                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video metadata'}\033[0m"
             )
             return
 
-        print(f"{'Queued:':<25}{video_id}")
         print(f"{'Title:':<25}{title}")
         print(f"{'Channel:':<25}{channel}")
-        print(f"{'Queued by:':<25}{username}")
         print()
 
         recently_played_history_length = 5

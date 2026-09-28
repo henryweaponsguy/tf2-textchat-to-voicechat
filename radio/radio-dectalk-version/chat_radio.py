@@ -175,7 +175,7 @@ def download_file(video_id, username):
             audio_file = queue_dir / f"{title} ({video_id}).{audio_format}"
         except json.JSONDecodeError:
             print(
-                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video info'}\033[0m"
+                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video metadata'}\033[0m"
             )
             return
 
