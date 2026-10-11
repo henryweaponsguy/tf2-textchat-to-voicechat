@@ -429,7 +429,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue\|skip\) \*" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue\|skip\)" |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     # Keep messages only from whitelisted players

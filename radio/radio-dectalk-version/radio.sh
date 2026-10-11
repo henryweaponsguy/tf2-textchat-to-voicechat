@@ -317,7 +317,7 @@ play_queue() {
 
             touch "$skip_voting_open_state_file"
 
-            paplay --device=virtual_speaker --client-name=radio "$audio_file" >/dev/null 2>&1 &
+            paplay --device=virtual_speaker_2 --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
             echo "$paplay_pid" > "$paplay_pid_file"
             wait "$paplay_pid"
@@ -417,7 +417,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue\|skip\) \*" |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue\|skip\)" |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     # Keep messages only from whitelisted players
