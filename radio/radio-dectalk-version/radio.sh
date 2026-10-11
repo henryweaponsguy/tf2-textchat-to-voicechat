@@ -317,7 +317,7 @@ play_queue() {
 
             touch "$skip_voting_open_state_file"
 
-            paplay --device=virtual_speaker_2 --client-name=radio "$audio_file" >/dev/null 2>&1 &
+            paplay --device=virtual_speaker --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
             echo "$paplay_pid" > "$paplay_pid_file"
             wait "$paplay_pid"
