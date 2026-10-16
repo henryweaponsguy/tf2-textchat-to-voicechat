@@ -51,10 +51,10 @@ touch "$skip_vote_file"
 
 
 # The length of the recently played list (-1 to make it infinite).
-# Songs in the recently played list cannot be queued again
+# Files in the recently played list cannot be queued again
 recently_played_length=5
 
-# Required votes to skip the currently playing video
+# Required votes to skip the currently playing file
 required_vote_count=5
 
 
@@ -335,7 +335,7 @@ play_queue() {
 
             touch "$skip_voting_open_state_file"
 
-            paplay --device=virtual_speaker_2 --client-name=radio "$audio_file" >/dev/null 2>&1 &
+            paplay --device=virtual_speaker --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
             echo "$paplay_pid" > "$paplay_pid_file"
             wait "$paplay_pid"

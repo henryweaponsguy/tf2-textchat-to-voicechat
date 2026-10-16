@@ -45,10 +45,10 @@ for file in [download_queue_file, queue_file, recently_played_file]:
 
 
 # The length of the recently played list (-1 to make it infinite).
-# Songs in the recently played list cannot be queued again
+# Files in the recently played list cannot be queued again
 recently_played_length = 5
 
-# Required votes to skip the currently playing video
+# Required votes to skip the currently playing file
 required_vote_count = 5
 
 
