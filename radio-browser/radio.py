@@ -36,13 +36,21 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 # Queue management files
 queue_dir = script_dir / "queue"
 queue_file = queue_dir / "queue.txt"
-recently_played_history_file = queue_dir / "recently_played_history.txt"
+recently_played_file = queue_dir / "recently_played.txt"
 
 queue_dir.mkdir(parents=True, exist_ok=True)
 
-for file in [queue_file, recently_played_history_file]:
+for file in [queue_file, recently_played_file]:
     if not file.exists():
         file.touch()
+
+
+# The length of the recently played list (-1 to make it infinite).
+# Songs in the recently played list cannot be queued again
+recently_played_length = 5
+
+# Required votes to skip the currently playing video
+required_vote_count = 5
 
 
 # Add '-condebug' to TF2's launch parameters.
@@ -231,7 +239,7 @@ def add_to_queue(video_id):
 
     recently_played_files = dict(
         line.split("\t", 1)
-        for line in recently_played_history_file.read_text().splitlines()
+        for line in recently_played_file.read_text().splitlines()
     )
 
     if video_id in queued_files:
@@ -277,17 +285,17 @@ def add_to_queue(video_id):
         print(f"{'Channel:':<25}{channel}")
         print()
 
-        recently_played_history_length = 5
-
         # Add the video to the recently played files list
         recently_played_files[video_id] = title
 
-        if recently_played_history_length > 0:
+        if recently_played_length == 0:
+            recently_played_files = {}
+        elif recently_played_length > 0:
             recently_played_files = dict(
-                list(recently_played_files.items())[-recently_played_history_length:]
+                list(recently_played_files.items())[-recently_played_length:]
             )
 
-        recently_played_history_file.write_text(
+        recently_played_file.write_text(
             "".join(
                 f"{video_id}\t{title}\n"
                 for video_id, title in recently_played_files.items()
@@ -457,14 +465,13 @@ with open(console_log, "r") as log:
                 args=(video_id,),
                 daemon=True,
             ).start()
-        # Vote to skip the currently playing file
+        # Vote to skip the currently playing video
         elif selected_command == "skip" and skip_voting_open:
             # Check if the user has not voted yet
             if username not in skip_vote_list:
                 skip_vote_list.add(username)
                 print(f"\033[34m{'Voted to skip:':<25}{username}\033[0m")
 
-                required_vote_count = 5
                 remaining_vote_count = required_vote_count - len(skip_vote_list)
 
                 if remaining_vote_count > 1:

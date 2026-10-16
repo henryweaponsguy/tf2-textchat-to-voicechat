@@ -37,6 +37,13 @@ poll_running_state_file="/tmp/poll.running"
 touch "$vote_file"
 
 
+# Required votes for the poll to close automatically
+required_vote_count=24
+
+# The time after which the poll closes
+time_limit=30
+
+
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
@@ -75,9 +82,6 @@ speak_text() {
 
 start_poll() {
     touch "$poll_running_state_file"
-
-    local required_vote_count=24
-    local time_limit=30
 
     play_sound "start"
     speak_text "A poll has started: $1"

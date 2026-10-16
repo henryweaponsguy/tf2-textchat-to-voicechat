@@ -27,6 +27,13 @@ signal.signal(signal.SIGINT, exit_cleanup)
 signal.signal(signal.SIGTERM, exit_cleanup)
 
 
+# Required votes for the poll to close automatically
+required_vote_count = 24
+
+# The time after which the poll closes
+time_limit = 30
+
+
 # Poll sounds directory
 sound_dir = script_dir / "sounds"
 
@@ -141,9 +148,6 @@ def speak_text(text):
 
 def start_poll(question):
     global poll_open
-
-    required_vote_count = 24
-    time_limit = 30
 
     play_sound("start")
     speak_text(f"A poll has started: {question}")

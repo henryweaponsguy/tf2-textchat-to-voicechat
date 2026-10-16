@@ -35,13 +35,21 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 download_queue_file = Path(tempfile.gettempdir()) / "download_queue.txt"
 queue_dir = script_dir / "queue"
 queue_file = queue_dir / "queue.txt"
-recently_played_history_file = queue_dir / "recently_played_history.txt"
+recently_played_file = queue_dir / "recently_played.txt"
 
 queue_dir.mkdir(parents=True, exist_ok=True)
 
-for file in [download_queue_file, queue_file, recently_played_history_file]:
+for file in [download_queue_file, queue_file, recently_played_file]:
     if not file.exists():
         file.touch()
+
+
+# The length of the recently played list (-1 to make it infinite).
+# Songs in the recently played list cannot be queued again
+recently_played_length = 5
+
+# Required votes to skip the currently playing video
+required_vote_count = 5
 
 
 # Add '-condebug' to TF2's launch parameters.
@@ -397,7 +405,7 @@ def download_queue():
 
         # Check if the file is queued already
         queued_files = queue_file.read_text().splitlines()
-        recently_played_files = recently_played_history_file.read_text().splitlines()
+        recently_played_files = recently_played_file.read_text().splitlines()
 
         # Check if the file has been downloaded
         if not audio_file:
@@ -413,17 +421,17 @@ def download_queue():
                 file.write(f"{audio_file}\n")
             print(f"\033[32m{'Queued:':<25}{audio_file.stem}\033[0m")
 
-            recently_played_history_length = 5
-
             # Add the file to the recently played files list
             recently_played_files.append(str(audio_file))
 
-            if recently_played_history_length > 0:
+            if recently_played_length == 0:
+                recently_played_files = []
+            elif recently_played_length > 0:
                 recently_played_files = recently_played_files[
-                    -recently_played_history_length:
+                    -recently_played_length:
                 ]
 
-            recently_played_history_file.write_text(
+            recently_played_file.write_text(
                 "\n".join(str(path) for path in recently_played_files) + "\n"
             )
 
@@ -522,7 +530,7 @@ download_queue_thread = Thread(
 )
 download_queue_thread.start()
 
-# Start the playback loop in the background
+# Start the audio player in the background
 queue_thread = Thread(
     target=start_queue,
     daemon=True,
@@ -579,7 +587,6 @@ with open(console_log, "r") as log:
                 skip_vote_list.add(username)
                 print(f"\033[34m{'Voted to skip:':<25}{username}\033[0m")
 
-                required_vote_count = 5
                 remaining_vote_count = required_vote_count - len(skip_vote_list)
 
                 if remaining_vote_count > 1:

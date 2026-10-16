@@ -39,15 +39,23 @@ paplay_pid_file="/tmp/paplay.pid"
 queue_pid_file="/tmp/queue.pid"
 queue_dir="${script_dir}/queue"
 queue_file="${queue_dir}/queue.txt"
-recently_played_history_file="${queue_dir}/recently_played_history.txt"
+recently_played_file="${queue_dir}/recently_played.txt"
 skip_vote_file="/tmp/skip_votes.txt"
 skip_voting_open_state_file="/tmp/skip_voting.open"
 
 mkdir -p "$queue_dir"
 touch "$download_queue_file"
 touch "$queue_file"
-touch "$recently_played_history_file"
+touch "$recently_played_file"
 touch "$skip_vote_file"
+
+
+# The length of the recently played list (-1 to make it infinite).
+# Songs in the recently played list cannot be queued again
+recently_played_length=5
+
+# Required votes to skip the currently playing video
+required_vote_count=5
 
 
 # Add '-condebug' to TF2's launch parameters.
@@ -278,21 +286,19 @@ download_queue() {
         elif grep -Fxq "$audio_file" "$queue_file"; then
             printf "\033[32m%-25s%s\033[0m\n" "Already in the queue:" "$audio_file_stem" >&2
         # Check if the file has been recently played
-        elif grep -Fxq "$audio_file" "$recently_played_history_file"; then
+        elif grep -Fxq "$audio_file" "$recently_played_file"; then
             printf "\033[32m%-25s%s\033[0m\n" "File recently played:" "$audio_file_stem" >&2
         else
             # Queue the file
             printf '%s\n' "$audio_file" >> "$queue_file"
             printf "\033[32m%-25s%s\033[0m\n" "Queued:" "$audio_file_stem" >&2
 
-            recently_played_history_length=5
-
             # Add the file to the recently played files list
-            printf '%s\n' "$audio_file" >> "$recently_played_history_file"
+            printf '%s\n' "$audio_file" >> "$recently_played_file"
 
-            if [[ "$recently_played_history_length" > -1 ]]; then
-                tail -n "$recently_played_history_length" "$recently_played_history_file" > "$recently_played_history_file.tmp"
-                mv "$recently_played_history_file.tmp" "$recently_played_history_file"
+            if [[ "$recently_played_length" > -1 ]]; then
+                tail -n "$recently_played_length" "$recently_played_file" > "$recently_played_file.tmp"
+                mv "$recently_played_file.tmp" "$recently_played_file"
             fi
         fi
 
@@ -329,7 +335,7 @@ play_queue() {
 
             touch "$skip_voting_open_state_file"
 
-            paplay --device=virtual_speaker --client-name=radio "$audio_file" >/dev/null 2>&1 &
+            paplay --device=virtual_speaker_2 --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
             echo "$paplay_pid" > "$paplay_pid_file"
             wait "$paplay_pid"
@@ -386,7 +392,7 @@ start_queue() {
 start_download_queue &
 echo $! > "$download_queue_pid_file"
 
-# Start the playback loop in the background
+# Start the audio player in the background
 start_queue &
 echo $! > "$queue_pid_file"
 
@@ -407,7 +413,6 @@ while IFS= read -r line; do
                 printf '%s\n' "$username" >> "$skip_vote_file"
                 printf "\033[34m%-25s%s\033[0m\n" "Voted to skip:" "$username" >&2
 
-                required_vote_count=5
                 remaining_vote_count=$(( $required_vote_count - $(wc -l < "$skip_vote_file") ))
 
                 if [[ "$remaining_vote_count" -gt 1 ]]; then

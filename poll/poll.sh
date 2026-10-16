@@ -38,6 +38,13 @@ poll_running_state_file="/tmp/poll.running"
 touch "$vote_file"
 
 
+# Required votes for the poll to close automatically
+required_vote_count=24
+
+# The time after which the poll closes
+time_limit=30
+
+
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
@@ -87,9 +94,6 @@ EOF
 
 start_poll() {
     touch "$poll_running_state_file"
-
-    local required_vote_count=24
-    local time_limit=30
 
     play_sound "start"
     speak_text "A poll has started: $1"
@@ -159,7 +163,7 @@ done < <(
     # Continuously read the last line of the log as it is updated
     stdbuf -oL tail -fn 1 "$console_log" |
     # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(startpoll\|poll\) " |
+    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(startpoll\|poll\) \?" |
     # Remove messages from blacklisted players
     grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
     # Keep messages only from whitelisted players
