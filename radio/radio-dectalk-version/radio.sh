@@ -56,6 +56,10 @@ recently_played_length=5
 # Required votes to skip the currently playing file
 required_vote_count=5
 
+# The level of announcements.
+# 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
+announcements_level=2
+
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
@@ -110,7 +114,7 @@ download_file() {
     matched_files=( "$queue_dir/"*" ($video_id).$audio_format" )
     shopt -u nullglob
 
-    if [[ ${#matched_files[@]} -gt 0 ]]; then
+    if (( ${#matched_files[@]} > 0 )); then
         local audio_file="${matched_files[0]}"
         local audio_file_stem=${audio_file##*/}
         audio_file_stem=${audio_file_stem%.*}
@@ -183,7 +187,7 @@ download_file() {
             [[ "$codec" == "opus" ]] && codec="libopus"
 
             # LUFS normalization cannot be calculated for very short files, use peak normalization instead
-            if (( $(echo "$duration < 0.4" | bc -l) )); then
+            if (( $(bc -l <<< "$duration < 0.4") )); then
                 # Analyze the file
                 local current_peak=$(
                     ffmpeg \
@@ -194,7 +198,7 @@ download_file() {
                         -f null - 2>&1 |
                     grep "max_volume: " | cut -d ':' -f 2 | cut -d ' ' -f 2
                 )
-                local gain=$(echo "$target_peak - $current_peak" | bc -l)
+                local gain=$(bc -l <<< "$target_peak - $current_peak")
 
                 # Normalize the file
                 ffmpeg \
@@ -284,7 +288,7 @@ download_queue() {
             # Add the file to the recently played files list
             printf '%s\n' "$audio_file" >> "$recently_played_file"
 
-            if [[ "$recently_played_length" > -1 ]]; then
+            if (( recently_played_length > -1 )); then
                 tail -n "$recently_played_length" "$recently_played_file" > "$recently_played_file.tmp"
                 mv "$recently_played_file.tmp" "$recently_played_file"
             fi
@@ -316,7 +320,9 @@ play_queue() {
             )
             file_title=$(echo "$file_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
-            speak_text "Now playing: $file_title."
+            if (( announcements_level >= 1  )); then
+                speak_text "Now playing: $file_title."
+            fi
 
             # Clear skip votes
             > "$skip_vote_file"
@@ -398,21 +404,25 @@ while IFS= read -r line; do
         if [ -e "$skip_voting_open_state_file" ]; then
             # Check if the user has not voted yet
             if ! grep -Fq "$(printf '%s' "$username")" "$skip_vote_file"; then
+                remaining_vote_count=$(( required_vote_count - $(wc -l < "$skip_vote_file") ))
+
                 printf '%s\n' "$username" >> "$skip_vote_file"
-                printf "\033[34m%-25s%s\033[0m\n" "Voted to skip:" "$username" >&2
+                printf "\033[34m%-25s%-10s%s\033[0m\n" "Voted to skip:" "$(( required_vote_count - remaining_vote_count ))/$required_vote_count: " "$username" >&2
 
-                remaining_vote_count=$(( $required_vote_count - $(wc -l < "$skip_vote_file") ))
+                if (( announcements_level == 2  )); then
+                    if (( remaining_vote_count > 1 )); then
+                        (speak_text "${remaining_vote_count} votes remaining.") &
+                    elif (( remaining_vote_count == 1 )); then
+                        (speak_text "1 vote remaining.") &
+                    # Skip the currently playing file if the required number of skip votes has been reached
+                    else
+                        (speak_text "Skipping the file.") &
 
-                if [[ "$remaining_vote_count" -gt 1 ]]; then
-                    (speak_text "${remaining_vote_count} votes remaining.") &
-                elif [[ "$remaining_vote_count" -eq 1 ]]; then
-                    (speak_text "1 vote remaining.") &
-                # Skip the currently playing file if the required number of skip votes has been reached
-                else
-                    (speak_text "Skipping the file.") &
+                        printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Skipping the file" >&2
 
-                    printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Skipping the file" >&2
-
+                        skip_current
+                    fi
+                elif (( remaining_vote_count == 0 )); then
                     skip_current
                 fi
             fi

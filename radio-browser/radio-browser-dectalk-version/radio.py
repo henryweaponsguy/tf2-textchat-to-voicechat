@@ -7,7 +7,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 from threading import Lock, Thread
 
@@ -51,6 +50,10 @@ recently_played_length = 5
 
 # Required votes to skip the currently playing video
 required_vote_count = 5
+
+# The level of announcements.
+# 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
+announcements_level = 2
 
 
 # Add '-condebug' to TF2's launch parameters.
@@ -227,8 +230,7 @@ def add_to_queue(video_id):
         )
 
     recently_played_files = dict(
-        line.split("\t", 1)
-        for line in recently_played_file.read_text().splitlines()
+        line.split("\t", 1) for line in recently_played_file.read_text().splitlines()
     )
 
     if video_id in queued_files:
@@ -348,7 +350,8 @@ def play_next():
     for pattern, replacement in replacements:
         clean_title = pattern.sub(replacement, title)
 
-    speak_text(f"Now playing: {clean_title}.")
+    if announcements_level >= 1:
+        speak_text(f"Now playing: {clean_title}.")
 
     with radio_lock:
         # Clear skip votes
@@ -458,30 +461,37 @@ with open(console_log, "r") as log:
         elif selected_command == "skip" and skip_voting_open:
             # Check if the user has not voted yet
             if username not in skip_vote_list:
-                skip_vote_list.add(username)
-                print(f"\033[34m{'Voted to skip:':<25}{username}\033[0m")
-
                 remaining_vote_count = required_vote_count - len(skip_vote_list)
 
-                if remaining_vote_count > 1:
-                    Thread(
-                        target=speak_text,
-                        args=(f"{remaining_vote_count} votes remaining.",),
-                        daemon=True,
-                    ).start()
-                elif remaining_vote_count == 1:
-                    Thread(
-                        target=speak_text,
-                        args=("1 vote remaining.",),
-                        daemon=True,
-                    ).start()
-                # Skip the currently playing video if the required number of skip votes has been reached
-                else:
-                    Thread(
-                        target=speak_text,
-                        args=("Skipping the video.",),
-                        daemon=True,
-                    ).start()
+                skip_vote_list.add(username)
+                print(
+                    f"\033[34m{'Voted to skip:':<25}"
+                    f"{f'{required_vote_count - remaining_vote_count}/{required_vote_count}':<10}"
+                    f"{username}\033[0m"
+                )
 
-                    print(f"\033[36m{'Queue:':<25}{'Skipping the video'}\033[0m")
+                if announcements_level == 2:
+                    if remaining_vote_count > 1:
+                        Thread(
+                            target=speak_text,
+                            args=(f"{remaining_vote_count} votes remaining.",),
+                            daemon=True,
+                        ).start()
+                    elif remaining_vote_count == 1:
+                        Thread(
+                            target=speak_text,
+                            args=("1 vote remaining.",),
+                            daemon=True,
+                        ).start()
+                    # Skip the currently playing file if the required number of skip votes has been reached
+                    else:
+                        Thread(
+                            target=speak_text,
+                            args=("Skipping the file.",),
+                            daemon=True,
+                        ).start()
+
+                        print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+                        skip_current()
+                elif remaining_vote_count == 0:
                     skip_current()

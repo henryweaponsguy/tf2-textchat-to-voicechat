@@ -50,6 +50,10 @@ recently_played_length = 5
 # Required votes to skip the currently playing file
 required_vote_count = 5
 
+# The level of announcements.
+# 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
+announcements_level = 2
+
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
@@ -415,9 +419,7 @@ def download_queue():
             if recently_played_length == 0:
                 recently_played_files = []
             elif recently_played_length > 0:
-                recently_played_files = recently_played_files[
-                    -recently_played_length:
-                ]
+                recently_played_files = recently_played_files[-recently_played_length:]
 
             recently_played_file.write_text(
                 "\n".join(str(path) for path in recently_played_files) + "\n"
@@ -441,7 +443,8 @@ def play_queue():
             for pattern, replacement in replacements:
                 clean_title = pattern.sub(replacement, clean_title)
 
-            speak_text(f"Now playing: {clean_title}.")
+            if announcements_level >= 1:
+                speak_text(f"Now playing: {clean_title}.")
 
             # Clear skip votes
             skip_vote_list.clear()
@@ -572,30 +575,37 @@ with open(console_log, "r") as log:
         elif selected_command == "skip" and skip_voting_open:
             # Check if the user has not voted yet
             if username not in skip_vote_list:
-                skip_vote_list.add(username)
-                print(f"\033[34m{'Voted to skip:':<25}{username}\033[0m")
-
                 remaining_vote_count = required_vote_count - len(skip_vote_list)
 
-                if remaining_vote_count > 1:
-                    Thread(
-                        target=speak_text,
-                        args=(f"{remaining_vote_count} votes remaining.",),
-                        daemon=True,
-                    ).start()
-                elif remaining_vote_count == 1:
-                    Thread(
-                        target=speak_text,
-                        args=("1 vote remaining.",),
-                        daemon=True,
-                    ).start()
-                # Skip the currently playing file if the required number of skip votes has been reached
-                else:
-                    Thread(
-                        target=speak_text,
-                        args=("Skipping the file.",),
-                        daemon=True,
-                    ).start()
+                skip_vote_list.add(username)
+                print(
+                    f"\033[34m{'Voted to skip:':<25}"
+                    f"{f'{required_vote_count - remaining_vote_count}/{required_vote_count}':<10}"
+                    f"{username}\033[0m"
+                )
 
-                    print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+                if announcements_level == 2:
+                    if remaining_vote_count > 1:
+                        Thread(
+                            target=speak_text,
+                            args=(f"{remaining_vote_count} votes remaining.",),
+                            daemon=True,
+                        ).start()
+                    elif remaining_vote_count == 1:
+                        Thread(
+                            target=speak_text,
+                            args=("1 vote remaining.",),
+                            daemon=True,
+                        ).start()
+                    # Skip the currently playing file if the required number of skip votes has been reached
+                    else:
+                        Thread(
+                            target=speak_text,
+                            args=("Skipping the file.",),
+                            daemon=True,
+                        ).start()
+
+                        print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+                        skip_current()
+                elif remaining_vote_count == 0:
                     skip_current()
