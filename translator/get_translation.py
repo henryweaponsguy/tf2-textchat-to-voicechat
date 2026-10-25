@@ -8,6 +8,7 @@ import urllib.request
 from pathlib import Path
 
 from langdetect import detect
+from langdetect import LangDetectException
 
 from get_piper_voice import speak_text
 
@@ -23,9 +24,12 @@ def translate(text):
     if not text:
         return
 
-    language = detect(text)
+    try:
+        language = detect(text)
+    except LangDetectException:
+        language = "en"
 
-    if language != "en":
+    if language == "en":
         return
 
     if language == "zh-cn":
@@ -42,6 +46,11 @@ def translate(text):
 
     with urllib.request.urlopen(post_request) as response:
         translation = json.load(response)["translatedText"]
+
+    if translation == "null":
+        return
+
+    print(f"{text}\n[{language}]\n{translation}")
 
     speak_text(translation)
 

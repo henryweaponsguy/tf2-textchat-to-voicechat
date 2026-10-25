@@ -10,7 +10,16 @@ translate() {
     text="$1"
     [[ -z "$text" ]] && return
 
-    language="$(python3 -c "import sys; from langdetect import detect; print(detect(sys.argv[1]))" "$text")"
+    language="$(python3 -c '
+import sys
+from langdetect import detect
+from langdetect import LangDetectException
+
+try:
+    print(detect(sys.argv[1]))
+except LangDetectException:
+    print("en")
+    ' "$text")"
 
     [[ "$language" == "en" ]] && return
     
@@ -33,9 +42,9 @@ EOF
         jq -r '.translatedText'
     )"
 
-    echo "$text"
-    echo "$language"
-    echo "$translation"
+    [[ "$translation" == "null" ]] && return
+
+    printf "%s\n%s\n%s\n%s\n" "Queued by:" "$text" "[$language]" "$translation" "====================" >&2
 
     "${script_dir}/get_piper_voice.sh" "$translation"
 }

@@ -32,9 +32,9 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 `soundboard-windows` - `soundboard` modified to work on Windows (requires [Python](https://www.python.org) and [mpv](https://mpv.io) to be installed. Other media players, like [VLC](https://www.videolan.org/vlc) or [ffplay](https://ffmpeg.org), can be used instead of mpv)
 
-`speech-to-piper` - converts speech to text-to-speech using [Vosk](https://alphacephei.com/vosk) and [Piper](https://github.com/OHF-Voice/piper1-gpl). Allows stopping playback early using a keyword (e.g. 'stop') (requires downloading a speech recognition model and a voice model before running)
+`stt-piper` - converts speech to text-to-speech using [Vosk](https://alphacephei.com/vosk) and [Piper](https://github.com/OHF-Voice/piper1-gpl). Allows stopping playback early using a keyword (e.g. 'stop') (requires downloading a speech recognition model and a voice model before running)
 
-`speech-to-soundboard` - converts valid voice commands to sounds if they are available in the `sounds/` directory using [Vosk](https://alphacephei.com/vosk) (requires downloading a speech recognition model before running)
+`stt-soundboard` - converts valid voice commands to sounds if they are available in the `sounds/` directory using [Vosk](https://alphacephei.com/vosk) (requires downloading a speech recognition model before running)
 
 `timer` - starts a countdown timer (plays sound cues from the `sounds/` directory)
 
