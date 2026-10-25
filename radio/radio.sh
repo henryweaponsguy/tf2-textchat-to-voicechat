@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
@@ -77,17 +79,21 @@ blacklisted_words=""
 
 
 play_sound() {
-    sound="$1"
+    local sound="$1"
 
     # Match files
-    shopt -s nullglob
-    matched_files=(
+    local matched_files=(
         "$sound_dir/$sound".*
         "$sound_dir/$sound "[0-9]*.*
+        "$sound_dir/$sound/"*.*
+        "$sound_dir/$sound/"* [0-9]*.*
     )
-    shopt -u nullglob
 
-    selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
+    if [[ ${#matched_files[@]} -eq 0 ]]; then
+        return
+    fi
+
+    local selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
     paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1
 }
@@ -101,9 +107,7 @@ download_file() {
     local audio_format="opus"
 
     # Check if the file has been downloaded already
-    shopt -s nullglob
     matched_files=( "$queue_dir/"*" ($video_id).$audio_format" )
-    shopt -u nullglob
 
     if (( ${#matched_files[@]} > 0 )); then
         local audio_file="${matched_files[0]}"
@@ -176,6 +180,7 @@ download_file() {
             )
 
             [[ "$codec" == "opus" ]] && codec="libopus"
+            [[ "$codec" == "vorbis" ]] && codec="libvorbis"
 
             # LUFS normalization cannot be calculated for very short files, use peak normalization instead
             if (( $(bc -l <<< "$duration < 0.4") )); then

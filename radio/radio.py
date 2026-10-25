@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import signal
 import subprocess
@@ -95,8 +96,11 @@ replacements = [
 
 def play_sound(sound):
     # Match files
-    matched_files = list(Path(sound_dir).glob(f"{sound}.*")) + list(
-        Path(sound_dir).glob(f"{sound} [0-9]*.*")
+    matched_files = (
+        list(Path(sound_dir).glob(f"{sound}.*"))
+        + list(Path(sound_dir).glob(f"{sound} [0-9]*.*"))
+        + list(Path(sound_dir).glob(f"{sound}/*.*"))
+        + list(Path(sound_dir).glob(f"{sound}/* [0-9]*.*"))
     )
 
     selected_file = str(random.choice(matched_files))
@@ -226,6 +230,8 @@ def download_file(video_id, username):
 
         if codec == "opus":
             codec = "libopus"
+        if codec == "vorbis":
+            codec = "libvorbis"
 
         # LUFS normalization cannot be calculated for very short files, use peak normalization instead
         if duration < 0.4:

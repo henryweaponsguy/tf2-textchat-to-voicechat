@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 sound_dir="${script_dir}/sounds"
@@ -54,13 +56,10 @@ while IFS= read -r line; do
 
     [[ -z "$text" ]] && continue
 
-
-    shopt -s nullglob
     matched_files=(
         "$sound_dir/${text,,}".*
         "$sound_dir/${text,,} "[0-9]*.*
     )
-    shopt -u nullglob
 
     # Skip the message if a soundboard sound exists
     if [[ ${#matched_files[@]} -gt 0 ]]; then

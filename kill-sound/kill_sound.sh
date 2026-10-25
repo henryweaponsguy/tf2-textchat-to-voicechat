@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
@@ -26,12 +28,10 @@ while IFS= read -r username; do
     fi
 
     # Match files
-    shopt -s nullglob
     matched_files=(
         "$sound_dir/${user_directories[$username]}/"*.*
         "$sound_dir/${user_directories[$username]}/"* [0-9]*.*
     )
-    shopt -u nullglob
 
     if [[ ${#matched_files[@]} -gt 0 ]]; then
         selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"

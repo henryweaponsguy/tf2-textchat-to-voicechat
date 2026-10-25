@@ -100,7 +100,6 @@ def speak_text(text):
             stderr=subprocess.DEVNULL,
         )
         announcer_process.wait()
-        announcer_process = None
     finally:
         try:
             Path(audio_file).unlink()
@@ -135,7 +134,7 @@ with open(console_log, "r") as log:
         #    continue
         # previous_line = line
 
-        # Skip the current announcement if there is one playing already
+        # Skip the incoming announcement if there is one playing already
         if announcer_process and announcer_process.poll() is None:
             continue
 

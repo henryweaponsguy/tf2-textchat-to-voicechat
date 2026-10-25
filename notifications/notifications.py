@@ -5,7 +5,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from threading import Thread
 
 script_dir = Path(__file__).resolve().parent
 
@@ -35,6 +34,7 @@ whitelisted_names = ""
 whitelisted_words = ""
 
 
+player_process = None
 previous_line = None
 
 re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  ")
@@ -45,14 +45,6 @@ re_whitelisted_names = re.compile(
     rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  "
 )
 re_whitelisted_words = re.compile(rf"{whitelisted_words or '.*'}", re.IGNORECASE)
-
-
-def play_sound(sound):
-    subprocess.run(
-        ["paplay", "--client-name=chat-notification", sound],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
 
 
 with open(console_log, "r") as log:
@@ -85,14 +77,18 @@ with open(console_log, "r") as log:
         #    continue
         # previous_line = line
 
+        # Skip the incoming notification if there is one playing already
+        if player_process and player_process.poll() is None:
+            continue
+
         # Match files
         matched_files = list(sound_dir.glob("*.*"))
 
         if matched_files:
             selected_file = str(random.choice(matched_files))
 
-            Thread(
-                target=play_sound,
-                args=(selected_file,),
-                daemon=True,
-            ).start()
+            player_process = subprocess.Popen(
+                ["paplay", "--client-name=chat-notification", selected_file],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )

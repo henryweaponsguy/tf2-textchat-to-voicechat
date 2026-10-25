@@ -61,7 +61,7 @@ EOF
 
 
 while IFS= read -r line; do
-    # Skip the current announcement if there is one playing already
+    # Skip the incoming announcement if there is one playing already
     announcer_pid=$(cat "$announcer_pid_file" 2>/dev/null)
     if [ -n "$announcer_pid" ]; then
         continue

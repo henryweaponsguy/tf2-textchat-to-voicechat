@@ -60,7 +60,7 @@ announcements_level = 2
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
-console_log = f"{script_dir}/console.log"
+console_log = script_dir / "console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"

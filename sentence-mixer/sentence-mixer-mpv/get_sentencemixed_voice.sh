@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
@@ -43,24 +45,20 @@ mix_sentences() {
         for word in "${words[@]}"; do
             selected_file=""
 
-            shopt -s nullglob
             matched_files=(
                 # Check for unnumbered and numbered variants
                 "${sound_dir}/${word}".wav*
                 "${sound_dir}/${word} "[0-9]*.wav
             )
-            shopt -u nullglob
 
             if [[ ${#matched_files[@]} -gt 0 ]]; then
                 selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
             else
                 # If a corresponding file does not exist, use a placeholder file
-                shopt -s nullglob
                 matched_files=(
                     "$sound_dir/_placeholder".wav*
                     "$sound_dir/_placeholder "[0-9]*.wav
                 )
-                shopt -u nullglob
 
                 if [[ ${#matched_files[@]} -gt 0 ]]; then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
@@ -133,13 +131,11 @@ mix_sentences() {
             done
 
             for variant in "${variants[@]}"; do
-                shopt -s nullglob
                 matched_files=(
                     # Check for unnumbered and numbered variants
                     "${sound_dir}/${variant}".wav*
                     "${sound_dir}/${variant} "[0-9]*.wav
                 )
-                shopt -u nullglob
 
                 if [[ ${#matched_files[@]} -gt 0 ]]; then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
@@ -149,12 +145,10 @@ mix_sentences() {
 
             # If a corresponding file does not exist, use a placeholder file
             if [[ -z "$selected_file" ]]; then
-                shopt -s nullglob
                 matched_files=(
                     "$sound_dir/_placeholder".wav*
                     "$sound_dir/_placeholder "[0-9]*.wav
                 )
-                shopt -u nullglob
 
                 if [[ ${#matched_files[@]} -gt 0 ]]; then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"

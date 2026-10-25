@@ -44,7 +44,7 @@ sound_dir = script_dir / "sounds"
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
-console_log = f"{script_dir}/console.log"
+console_log = script_dir / "console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
@@ -164,8 +164,11 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
 def play_sound(sound):
     # Match files
-    matched_files = list(Path(sound_dir).glob(f"{sound}.*")) + list(
-        Path(sound_dir).glob(f"{sound} [0-9]*.*")
+    matched_files = (
+        list(Path(sound_dir).glob(f"{sound}.*"))
+        + list(Path(sound_dir).glob(f"{sound} [0-9]*.*"))
+        + list(Path(sound_dir).glob(f"{sound}/*.*"))
+        + list(Path(sound_dir).glob(f"{sound}/* [0-9]*.*"))
     )
 
     selected_file = str(random.choice(matched_files))

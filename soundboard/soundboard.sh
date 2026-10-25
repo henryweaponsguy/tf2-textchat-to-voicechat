@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
@@ -46,12 +48,10 @@ while IFS= read -r line; do
     )"
 
     # Match files
-    shopt -s nullglob
     matched_files=(
         "$sound_dir/$message".*
         "$sound_dir/$message "[0-9]*.*
     )
-    shopt -u nullglob
 
     if [[ ${#matched_files[@]} -eq 0 ]]; then
         continue

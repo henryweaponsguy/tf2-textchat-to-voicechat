@@ -47,6 +47,7 @@ for file in "$input_directory"/*; do
     )
 
     [[ "$codec" == "opus" ]] && codec="libopus"
+    [[ "$codec" == "vorbis" ]] && codec="libvorbis"
 
     # LUFS normalization cannot be calculated for very short files, use peak normalization instead
     if (( $(echo "$duration < 0.4" | bc -l) )); then

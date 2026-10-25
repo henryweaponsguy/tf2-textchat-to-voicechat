@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
@@ -122,9 +124,7 @@ download_file() {
     local audio_format="opus"
 
     # Check if the file has been downloaded already
-    shopt -s nullglob
     matched_files=( "$queue_dir/"*" ($video_id).$audio_format" )
-    shopt -u nullglob
 
     if (( ${#matched_files[@]} > 0 )); then
         local audio_file="${matched_files[0]}"
@@ -197,6 +197,7 @@ download_file() {
             )
 
             [[ "$codec" == "opus" ]] && codec="libopus"
+            [[ "$codec" == "vorbis" ]] && codec="libvorbis"
 
             # LUFS normalization cannot be calculated for very short files, use peak normalization instead
             if (( $(bc -l <<< "$duration < 0.4") )); then

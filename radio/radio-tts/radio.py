@@ -272,6 +272,8 @@ def download_file(video_id, username):
 
         if codec == "opus":
             codec = "libopus"
+        if codec == "vorbis":
+            codec = "libvorbis"
 
         # LUFS normalization cannot be calculated for very short files, use peak normalization instead
         if duration < 0.4:

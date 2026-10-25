@@ -23,6 +23,9 @@ whitelisted_names=""
 whitelisted_words=""
 
 
+player_process=""
+
+
 # Continuously read the last line of the log as it is updated
 stdbuf -oL tail -fn 1 "$console_log" |
 # Search for lines containing the command
@@ -37,6 +40,11 @@ grep --line-buffered -i "${whitelisted_words:-.*}" |
 #stdbuf -o0 uniq |
 # Play the audio file
 while IFS= read -r line; do
+    # Skip the incoming notification if there is one playing already
+    if [[ -n "$player_process" ]] && kill -0 "$player_process" 2>/dev/null; then
+        continue
+    fi
+
     shopt -s nullglob
     matched_files=( "$sound_dir/"*.* )
     shopt -u nullglob
@@ -45,5 +53,6 @@ while IFS= read -r line; do
         selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
         paplay --client-name=chat-notification "$selected_file" >/dev/null 2>&1 &
+        player_process="$!"
     fi
 done
