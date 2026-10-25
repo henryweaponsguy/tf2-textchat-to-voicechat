@@ -50,7 +50,7 @@ def translate(text):
     if translation == "null":
         return
 
-    print(f"{text}\n[{language}]\n{translation}")
+    print(f"{text}\n[{language}]\n{translation}\n====================")
 
     speak_text(translation)
 
