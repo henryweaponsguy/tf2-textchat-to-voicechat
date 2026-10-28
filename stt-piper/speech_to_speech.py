@@ -132,10 +132,7 @@ def speak_text(text):
         announcer_process.wait()
         announcer_process = None
     finally:
-        try:
-            Path(audio_file).unlink()
-        except FileNotFoundError:
-            pass
+        Path(audio_file).unlink(missing_ok=True)
 
 
 with sd.RawInputStream(

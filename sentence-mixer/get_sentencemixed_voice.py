@@ -242,10 +242,7 @@ def speak_text(line):
             stderr=subprocess.DEVNULL,
         )
     finally:
-        try:
-            Path(audio_file).unlink()
-        except FileNotFoundError:
-            pass
+        Path(audio_file).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

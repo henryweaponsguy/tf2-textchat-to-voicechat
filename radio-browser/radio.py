@@ -233,7 +233,7 @@ def add_to_queue(video_id):
             )
 
             video_info = json.loads(yt_dlp_output.stdout)
-            title = video_info["filename"]
+            title = video_info["title"]
             channel = video_info["channel"]
         except json.JSONDecodeError:
             print(
@@ -278,7 +278,7 @@ def add_to_queue(video_id):
 
             try:
                 # Notify the web client the queue is populated
-                client.wfile.write((f"event: ensure_playback\n\n").encode("utf-8"))
+                client.wfile.write((f"event: ensure_playback\ndata:\n\n").encode("utf-8"))
                 client.wfile.flush()
             except (BrokenPipeError, ConnectionResetError, OSError):
                 # If the connection is broken, clear the web client
@@ -353,7 +353,7 @@ def skip_current():
 
     try:
         # Send the skip request to the web client
-        client.wfile.write((f"event: skip\n\n").encode("utf-8"))
+        client.wfile.write((f"event: skip\ndata:\n\n").encode("utf-8"))
         client.wfile.flush()
     except (BrokenPipeError, ConnectionResetError, OSError):
         # If the connection is broken, clear the web client

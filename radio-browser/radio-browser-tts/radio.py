@@ -222,10 +222,7 @@ def speak_text(text):
         announcer_process.wait()
         announcer_process = None
     finally:
-        try:
-            Path(audio_file).unlink()
-        except FileNotFoundError:
-            pass
+        Path(audio_file).unlink(missing_ok=True)
 
 
 def add_to_queue(video_id):
@@ -276,7 +273,7 @@ def add_to_queue(video_id):
             )
 
             video_info = json.loads(yt_dlp_output.stdout)
-            title = video_info["filename"]
+            title = video_info["title"]
             channel = video_info["channel"]
         except json.JSONDecodeError:
             print(
