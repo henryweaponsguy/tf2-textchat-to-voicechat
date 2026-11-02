@@ -384,8 +384,8 @@ def play_next():
         )
 
     if announcements_level >= 1:
-    for pattern, replacement in replacements_tts:
-        clean_title = pattern.sub(replacement, title)
+        for pattern, replacement in replacements_tts:
+            clean_title = pattern.sub(replacement, title)
 
         speak_text(f"Now playing: {clean_title}.")
 

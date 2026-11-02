@@ -347,10 +347,10 @@ play_queue() {
             printf "%s\n" "say \"${text_message_prefix}${truncated_title}${text_message_suffix}\";echo \"text_message_sent\"" > "$text_message_file"
 
             if (( announcements_level >= 1 )); then
-                clean_title=$(echo "$audio_file_stem" | sed -E \
+                clean_title=$(printf "%s" "$audio_file_stem" | sed -E \
                     -e "s/[-_]/,/g"
                 )
-                clean_title=$(echo "$clean_title" | tr -cd '[:alnum:][:space:][:punct:]')
+                clean_title=$(printf "%s" "$clean_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
                 speak_text "Now playing: $clean_title."
             fi
