@@ -33,9 +33,12 @@ declare -A rate_limiting
 
 while IFS= read -r line; do
     # Extract usernames and messages
-    username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?\(.\+\): .\+/\3/p' <<< "$line")"
-    #message="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: ![a-zA-Z0-9_]\+ \(.\+\)/\3/p' <<< "$line")"
-    message="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\* \)\?\((TEAM) \)\?.\+: \(.\+\)/\3/p' <<< "$line")"
+    re_username_message="^(\*DEAD\* |\*SPEC\* )?(\(TEAM\) )? ?(.+) : (.+)"
+    #re_username_message="^(\*DEAD\* |\*SPEC\* )?(\(TEAM\) )? ?(.+) : ![a-zA-Z0-9_]+ (.+)"
+    if [[ "$line" =~ $re_username_message ]]; then
+        username="${BASH_REMATCH[3]}"
+        message="${BASH_REMATCH[4]}"
+    fi
 
     message="$(
         # Convert the message to lowercase

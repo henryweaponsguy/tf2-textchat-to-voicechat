@@ -68,7 +68,10 @@ while IFS= read -r line; do
     fi
 
     # Extract usernames
-    username="$(sed -n 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?\(.\+\) :  .\+/\3/p' <<< "$line")"
+    re_username="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  .+"
+    if [[ "$line" =~ $re_username ]]; then
+        username="${BASH_REMATCH[3]}"
+    fi
 
     current_time="$(date +%s)"
 

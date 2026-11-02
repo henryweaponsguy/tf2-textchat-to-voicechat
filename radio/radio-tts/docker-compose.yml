@@ -11,6 +11,7 @@ services:
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/cfg/overrides/message.cfg:/tts/message.cfg
       - ./radio.sh:/tts/radio.sh:ro
       - ./models:/tts/models:ro
       - ./queue:/tts/queue

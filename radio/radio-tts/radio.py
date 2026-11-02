@@ -13,6 +13,8 @@ script_dir = Path(__file__).resolve().parent
 
 
 def exit_cleanup(signum, frame):
+    open(text_message_file, "w").close()
+
     for process in [announcer_process, radio_process]:
         if process and process.poll() is None:
             process.terminate()
@@ -61,6 +63,10 @@ announcements_level = 2
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
+# Location of the file for storing generated text chat messages.
+# This file should be in the same directory as TF2's autoexec.cfg
+text_message_file = script_dir / "message.cfg"
+
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
 blacklisted_names = ""
@@ -73,6 +79,8 @@ whitelisted_names = ""
 blacklisted_words = ""
 
 
+open(text_message_file, "w").close()
+
 piper_server = "http://localhost:5000/synthesize"
 download_queue_thread = None
 queue_thread = None
@@ -82,6 +90,7 @@ skip_voting_open = False
 
 skip_vote_list = set()
 
+re_message_sent_signal = re.compile(r"^text_message_sent ?$")
 re_command = re.compile(
     r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) *(.+)?"
 )
@@ -454,6 +463,17 @@ def play_queue():
             for pattern, replacement in replacements:
                 clean_title = pattern.sub(replacement, clean_title)
 
+            text_message_prefix = "[RADIO] "
+            text_message_suffix = f" ({video_id})"
+            truncated_title_length = 127 - len(text_message_prefix) - len(text_message_suffix)
+            truncated_title = " ".join(clean_title.split())[:truncated_title_length]
+
+            with open(text_message_file, "w") as file:
+                file.write(
+                    f"say \"{text_message_prefix}{truncated_title}{text_message_suffix}\";"
+                    "echo \"text_message_sent\"\n"
+                )
+
             if announcements_level >= 1:
                 speak_text(f"Now playing: {clean_title}.")
 
@@ -553,6 +573,13 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
+
+        # Search for lines containing the text-message-sent signal
+        if re_message_sent_signal.search(line):
+            # Clear the old text message
+            open(text_message_file, "w").close()
+            continue
+
         # Search for lines containing the command
         if not re_command.search(line):
             continue
@@ -596,6 +623,12 @@ with open(console_log, "r") as log:
                     f"{username}\033[0m"
                 )
 
+                with open(text_message_file, "w") as file:
+                    file.write(
+                        f"say \"[RADIO] Remaining votes: {remaining_vote_count}\";"
+                        "echo \"text_message_sent\"\n"
+                    )
+
                 if announcements_level == 2:
                     if remaining_vote_count > 1:
                         Thread(
@@ -618,6 +651,13 @@ with open(console_log, "r") as log:
                         ).start()
 
                         print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+
+                        open(text_message_file, "w").close()
+
                         skip_current()
                 elif remaining_vote_count == 0:
+                    print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+
+                    open(text_message_file, "w").close()
+
                     skip_current()

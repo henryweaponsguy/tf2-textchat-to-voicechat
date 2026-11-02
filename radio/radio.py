@@ -1,5 +1,4 @@
 import json
-import random
 import re
 import signal
 import subprocess
@@ -12,9 +11,16 @@ from threading import Thread
 script_dir = Path(__file__).resolve().parent
 
 
+def exit_cleanup(signum, frame):
+    open(text_message_file, "w").close()
+
+    sys.exit(0)
+
+
 # Exit cleanly on CTRL+C and system shutdown
-signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
-signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
+signal.signal(signal.SIGINT, exit_cleanup)
+signal.signal(signal.SIGTERM, exit_cleanup)
+
 
 
 # Queue management files
@@ -46,6 +52,10 @@ sound_dir = script_dir / "sounds"
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
+# Location of the file for storing generated text chat messages.
+# This file should be in the same directory as TF2's autoexec.cfg
+text_message_file = script_dir / "message.cfg"
+
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
 blacklisted_names = ""
@@ -58,6 +68,8 @@ whitelisted_names = ""
 blacklisted_words = ""
 
 
+open(text_message_file, "w").close()
+
 download_queue_thread = None
 queue_thread = None
 announcer_process = None
@@ -66,6 +78,7 @@ skip_voting_open = False
 
 skip_vote_list = set()
 
+re_message_sent_signal = re.compile(r"^text_message_sent ?$")
 re_command = re.compile(
     r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) *(.+)?"
 )
@@ -95,13 +108,15 @@ replacements = [
 
 
 def play_sound(sound):
-    # Match files
     matched_files = (
         list(Path(sound_dir).glob(f"{sound}.*"))
         + list(Path(sound_dir).glob(f"{sound} [0-9]*.*"))
         + list(Path(sound_dir).glob(f"{sound}/*.*"))
         + list(Path(sound_dir).glob(f"{sound}/* [0-9]*.*"))
     )
+
+    if not matched_files:
+        return
 
     selected_file = str(random.choice(matched_files))
 
@@ -411,9 +426,19 @@ def play_queue():
         if Path(audio_file).exists():
             print(f"\033[33m{'Now playing:':<25}{audio_file.stem}\033[0m")
 
-            clean_title = Path(audio_file).stem
             for pattern, replacement in replacements:
-                clean_title = pattern.sub(replacement, clean_title)
+                clean_title = pattern.sub(replacement, title)
+
+            text_message_prefix = "[RADIO] "
+            text_message_suffix = f" ({video_id})"
+            truncated_title_length = 127 - len(text_message_prefix) - len(text_message_suffix)
+            truncated_title = " ".join(clean_title.split())[:truncated_title_length]
+
+            with open(text_message_file, "w") as file:
+                file.write(
+                    f"say \"{text_message_prefix}{truncated_title}{text_message_suffix}\";"
+                    "echo \"text_message_sent\"\n"
+                )
 
             play_sound("interlude")
 
@@ -513,6 +538,13 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
+
+        # Search for lines containing the text-message-sent signal
+        if re_message_sent_signal.search(line):
+            # Clear the old text message
+            open(text_message_file, "w").close()
+            continue
+
         # Search for lines containing the command
         if not re_command.search(line):
             continue
@@ -556,6 +588,12 @@ with open(console_log, "r") as log:
                     f"{username}\033[0m"
                 )
 
+                with open(text_message_file, "w") as file:
+                    file.write(
+                        f"say \"[RADIO] Remaining votes: {remaining_vote_count}\";"
+                        "echo \"text_message_sent\"\n"
+                    )
+
                 if remaining_vote_count > 0:
                     Thread(
                         target=play_sound,
@@ -565,4 +603,7 @@ with open(console_log, "r") as log:
                 # Skip the currently playing file if the required number of skip votes has been reached
                 else:
                     print(f"\033[36m{'Queue:':<25}{'Skipping the file'}\033[0m")
+
+                    open(text_message_file, "w").close()
+
                     skip_current()
