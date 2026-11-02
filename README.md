@@ -1,6 +1,6 @@
-# Text chat-parsing tools for Team Fortress 2
+# Text chat scripts for Team Fortress 2
 
-Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker containers or check `Dockerfile` and `docker-compose.yml` files for dependencies and environment setup
+Text chat/voice chat scripts for TF2 available in Bash and Python. Use Docker containers or check `Dockerfile` and `docker-compose.yml` files for dependencies and environment setup
 
 ---
 
@@ -36,6 +36,8 @@ Text chat to voice chat scripts for TF2 available in Bash and Python. Use Docker
 
 `stt-soundboard` - converts valid voice commands to sounds if they are available in the `sounds/` directory using [Vosk](https://alphacephei.com/vosk) (requires downloading a speech recognition model before running)
 
+`stt-text` - converts speech to text chat messages using [Vosk](https://alphacephei.com/vosk) (requires downloading a speech recognition model before running)
+
 `timer` - starts a countdown timer (plays sound cues from the `sounds/` directory)
 
 `translator` - translates text messages to English (requires downloading a translation model before running)
@@ -69,6 +71,21 @@ Or to run a Python script: `docker exec -it <container name, e.g. tf2-soundboard
 Stop the container: `docker compose down`
 
 Rebuild a container to update dependencies: `export UID=$(id -u); docker compose build`
+
+#### Toggleable text chat logging (for `radio` and other scripts)
+
+Create a `message.cfg` file next to TF2's `autoexec.cfg` file and add this to TF2's `autoexec.cfg`:
+
+```
+alias messageLoopKey startMessageLoop
+alias startMessageLoop "echo ==================== MESSAGES ENABLED ====================;echo text_message_sent;alias messageLoopKey stopMessageLoop;alias redirectMessageLoop runMessageLoop;runMessageLoop"
+alias stopMessageLoop "echo ==================== MESSAGES DISABLED ====================;alias redirectMessageLoop;alias messageLoopKey startMessageLoop"
+alias messageLoopCommand "exec overrides/message.cfg"
+alias runMessageLoop "messageLoopCommand;wait 480;redirectMessageLoop"
+bind "p" messageLoopKey
+```
+
+The actual duration of the `wait` command depends on the server's tickrate and the client's framerate. Check [this](https://wiki.teamfortress.com/wiki/Scripting#wait) for the formula
 
 ---
 
