@@ -99,8 +99,6 @@ re_url = re.compile(
 
 replacements = [
     (re.compile(r"\([A-Za-z0-9_-]+\)$"), ""),
-    (re.compile(r"[-_]"), ","),
-    (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
     (
         re.compile(
             r"[\[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[\]\)] *",
@@ -340,7 +338,7 @@ def play_next():
     text_message_prefix = "[RADIO] "
     text_message_suffix = f" ({video_id})"
     truncated_title_length = 127 - len(text_message_prefix) - len(text_message_suffix)
-    truncated_title = clean_title.strip()[:truncated_title_length]
+    truncated_title = " ".join(clean_title.split())[:truncated_title_length]
 
     with open(text_message_file, "w") as file:
         file.write(
@@ -349,6 +347,7 @@ def play_next():
         )
 
     play_sound("interlude")
+    play_sound("elevator bell")
 
     with radio_lock:
         # Clear skip votes

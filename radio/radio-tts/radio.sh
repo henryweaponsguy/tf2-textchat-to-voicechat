@@ -333,14 +333,10 @@ play_queue() {
         if [[ -f "$audio_file" ]]; then
             printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file_stem" >&2
 
-            local clean_title="${audio_file##*/}"
-            clean_title="${clean_title%.*}"
-            clean_title=$(echo "$clean_title" | sed -E \
+            local clean_title=$(echo "$audio_file_stem" | sed -E \
                 -e "s/\([A-Za-z0-9_-]+\)$//g" \
                 -e "s/[[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[]\)] *//gI" \
-                -e "s/[-_]/,/g"
             )
-            clean_title=$(echo "$clean_title" | tr -cd '[:alnum:][:space:][:punct:]')
 
             text_message_prefix="[RADIO] "
             text_message_suffix=" ($video_id)"
@@ -351,6 +347,11 @@ play_queue() {
             printf "%s\n" "say \"${text_message_prefix}${truncated_title}${text_message_suffix}\";echo \"text_message_sent\"" > "$text_message_file"
 
             if (( announcements_level >= 1 )); then
+                clean_title=$(echo "$audio_file_stem" | sed -E \
+                    -e "s/[-_]/,/g"
+                )
+                clean_title=$(echo "$clean_title" | tr -cd '[:alnum:][:space:][:punct:]')
+
                 speak_text "Now playing: $clean_title."
             fi
 

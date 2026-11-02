@@ -107,8 +107,6 @@ re_url = re.compile(
 
 replacements = [
     (re.compile(r"\([A-Za-z0-9_-]+\)$"), ""),
-    (re.compile(r"[-_]"), ","),
-    (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
     (
         re.compile(
             r"[\[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[\]\)] *",
@@ -116,6 +114,11 @@ replacements = [
         ),
         "",
     ),
+]
+
+replacements_tts [
+    (re.compile(r"[-_]"), ","),
+    (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
 ]
 
 
@@ -475,6 +478,9 @@ def play_queue():
                 )
 
             if announcements_level >= 1:
+                for pattern, replacement in replacements_tts:
+                    clean_title = pattern.sub(replacement, clean_title)
+
                 speak_text(f"Now playing: {clean_title}.")
 
             # Clear skip votes
