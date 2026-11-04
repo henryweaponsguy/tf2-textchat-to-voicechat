@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import signal
 import subprocess
@@ -92,11 +93,10 @@ re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE
 re_url = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
 )
+re_video_id = re.compile(r"\(([A-Za-z0-9_-]+)\)$")
 
 replacements = [
     (re.compile(r"\([A-Za-z0-9_-]+\)$"), ""),
-    (re.compile(r"[-_]"), ","),
-    (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
     (
         re.compile(
             r"[\[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[\]\)] *",
@@ -288,9 +288,9 @@ def download_file(video_id, username):
                     "-acodec",
                     codec,
                     "-ar",
-                    sample_rate,
+                    str(sample_rate),
                     "-ac",
-                    channels,
+                    str(channels),
                     str(temp_file),
                 ]
             )
@@ -356,9 +356,9 @@ def download_file(video_id, username):
                         "-acodec",
                         codec,
                         "-ar",
-                        sample_rate,
+                        str(sample_rate),
                         "-ac",
-                        channels,
+                        str(channels),
                         str(temp_file),
                     ]
                 )
@@ -416,21 +416,26 @@ def download_queue():
 def play_queue():
     while queue_file.exists() and queue_file.stat().st_size > 0:
         with open(queue_file, "r+") as file:
-            audio_file = file.readline().rstrip("\n")
+            audio_file = Path(file.readline().rstrip("\n"))
 
             rest = file.read()
             file.seek(0)
             file.write(rest)
             file.truncate()
 
-        if Path(audio_file).exists():
+        if audio_file.exists():
             print(f"\033[33m{'Now playing:':<25}{audio_file.stem}\033[0m")
 
+            clean_title = audio_file.stem
+
+            video_id_match = re_video_id.match(clean_title)
+            video_id = video_id_match.group(1) if video_id_match else None
+
             for pattern, replacement in replacements:
-                clean_title = pattern.sub(replacement, title)
+                clean_title = pattern.sub(replacement, clean_title)
 
             text_message_prefix = "[RADIO] "
-            text_message_suffix = f" ({video_id})"
+            text_message_suffix = f" ({video_id})" if video_id else ""
             truncated_title_length = 127 - len(text_message_prefix) - len(text_message_suffix)
             truncated_title = " ".join(clean_title.split())[:truncated_title_length]
 
@@ -456,7 +461,7 @@ def play_queue():
                     "paplay",
                     "--device=virtual_speaker",
                     "--client-name=radio",
-                    audio_file,
+                    str(audio_file),
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -564,7 +569,7 @@ with open(console_log, "r") as log:
         selected_command = matched_command.group(4)
         video_url = matched_command.group(5)
 
-        if selected_command == "queue" and video_id:
+        if selected_command == "queue" and video_url:
             # Check if the video ID is valid
             video_url_match = re_url.match(video_url)
             if not video_url_match:

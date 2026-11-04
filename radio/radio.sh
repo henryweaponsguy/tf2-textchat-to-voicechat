@@ -308,7 +308,7 @@ play_queue() {
     while [[ -s "$queue_file" ]]; do
         local audio_file=$(head -n 1 "$queue_file")
         local audio_file_stem=${audio_file##*/}
-        audio_file_stem=${audio_file_stem%.*}
+        local audio_file_stem=${audio_file_stem%.*}
 
         # Remove the current file from the queue file
         tail -n +2 "$queue_file" > "$queue_file.tmp" && cat "$queue_file.tmp" > "$queue_file" && rm "$queue_file.tmp"
@@ -316,15 +316,18 @@ play_queue() {
         if [[ -f "$audio_file" ]]; then
             printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file_stem" >&2
 
-            local clean_title=$(printf "%s" "$audio_file_stem" | sed -E \
+            [[ "$audio_file_stem" =~ \(([A-Za-z0-9_-]+)\)$ ]] && local video_id="${BASH_REMATCH[1]}"
+
+            local clean_title="$(printf "%s" "$audio_file_stem" | sed -E \
                 -e "s/\([A-Za-z0-9_-]+\)$//g" \
                 -e "s/[[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[]\)] *//gI" \
-            )
+            )"
 
-            text_message_prefix="[RADIO] "
-            text_message_suffix=" ($video_id)"
-            truncated_title_length=$((127 - ${#text_message_prefix} - ${#text_message_suffix}))
-            truncated_title="$(printf "%s" "$clean_title" | sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;')"
+            local text_message_prefix="[RADIO] "
+            local text_message_suffix=""
+            [[ -n "$video_id" ]] && text_message_suffix=" ($video_id)"
+            local truncated_title_length=$((127 - ${#text_message_prefix} - ${#text_message_suffix}))
+            local truncated_title="$(printf "%s" "$clean_title" | sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;')"
             truncated_title="${truncated_title:0:$truncated_title_length}"
 
             printf "%s\n" "say \"${text_message_prefix}${truncated_title}${text_message_suffix}\";echo \"text_message_sent\"" > "$text_message_file"
@@ -399,7 +402,8 @@ echo $! > "$queue_pid_file"
 
 
 while IFS= read -r line; do
-    if grep -q '^text_message_sent \?$' <<< "$line"; then
+    re_message_sent_signal="^text_message_sent \?$"
+    if [[ "$line" =~ $re_message_sent_signal ]]; then
         # Clear the old text message
         > "$text_message_file"
 
@@ -418,9 +422,7 @@ while IFS= read -r line; do
         grep --line-buffered -v "${blacklisted_words:-$^}"
     )"
 
-    if [[ -z "$line" ]]; then
-        continue
-    fi
+    [[ -z "$line" ]] && continue
 
     re_username="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  .+"
     if [[ "$line" =~ $re_username ]]; then
