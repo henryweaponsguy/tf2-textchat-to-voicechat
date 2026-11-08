@@ -64,7 +64,7 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 Add `-condebug` to TF2's launch parameters. Alternatively, add `con_logfile <logfile location, e.g. console.log>` to TF2's `autoexec.cfg`
 
-Run TF2 at least once before starting a container so the `console.log` file is created
+Run TF2 at least once before starting a script/container so the `console.log` file is created
 
 #### Bubblewrap sandbox
 
