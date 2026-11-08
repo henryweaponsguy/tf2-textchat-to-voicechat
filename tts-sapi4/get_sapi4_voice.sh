@@ -59,7 +59,7 @@ speak_text() {
 
 
 # Determine mode
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     # Command-line mode
     speak_text "$*"
 elif ! tty -s; then

@@ -3,7 +3,7 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
-translation_server="http://localhost:5001/translate"
+translation_server="http://127.0.0.1:5001/translate"
 
 
 translate() {
@@ -12,17 +12,21 @@ translate() {
 
     language="$(python3 -c '
 import sys
+from lexilang.detector import detect as dict_detect
 from langdetect import detect
 from langdetect import LangDetectException
 
-try:
-    print(detect(sys.argv[1]))
-except LangDetectException:
-    print("en")
+if len(text) <= 20:
+    print(dict_detect(text)[0])
+else:
+    try:
+        print(detect(sys.argv[1]))
+    except LangDetectException:
+        print("en")
     ' "$text")"
 
     [[ "$language" == "en" ]] && return
-    
+
     [[ "$language" == "zh-cn" ]] && language="zh"
 
 
@@ -44,14 +48,14 @@ EOF
 
     [[ "$translation" == "null" ]] && return
 
-    printf "%s\n%s\n%s\n%s\n" "Queued by:" "$text" "[$language]" "$translation" "====================" >&2
+    printf "%s\n%s\n%s\n%s\n" "$text" "[$language]" "$translation" "====================" >&2
 
     "${script_dir}/get_piper_voice.sh" "$translation"
 }
 
 
 # Determine mode
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     # Command-line mode
     translate "$*"
 elif ! tty -s; then

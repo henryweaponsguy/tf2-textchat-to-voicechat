@@ -9,17 +9,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /tts
+WORKDIR /app
 
-RUN python3 -m venv venv
-RUN venv/bin/pip install \
+RUN python3 -m venv .venv
+RUN /app/.venv/bin/pip install \
     libretranslate
-RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
-ENV PATH="/tts/venv/bin:${PATH}"
+RUN echo 'source /app/.venv/bin/activate' >> /root/.bashrc
+ENV PATH="/app/.venv/bin:${PATH}"
 
 ENV ARGOS_CHUNK_TYPE=MINISBD
 
 
 EXPOSE 5001
 
-CMD ["libretranslate", "--host", "0.0.0.0", "--port", "5001", "--load-only", "cs,da,de,en,es,fi,fr,hu,it,ja,nl,nb,pl,pt,ro,ru,sv,tr,uk,zh"]
+CMD ["libretranslate", "--host", "0.0.0.0", "--port", "5001", "--load-only", "cs,da,de,en,es,fi,fr,hu,it,ja,ko,nl,nb,pl,pt,ro,ru,sv,tr,uk,zh"]

@@ -12,7 +12,7 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-piper_server = "http://localhost:5000/synthesize"
+piper_server = "http://127.0.0.1:5000/synthesize"
 
 # Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples
@@ -37,8 +37,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         # Default voice

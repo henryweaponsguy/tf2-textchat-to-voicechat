@@ -17,11 +17,11 @@ RUN git clone --depth 1 https://github.com/dectalk/dectalk.git
 WORKDIR /tmp/dectalk/src
 RUN autoreconf -i && \
     ./configure && \
-    make && \
+    make -j && \
     make install
 
 
-WORKDIR /tts
+WORKDIR /app
 
 RUN rm -rf /tmp/dectalk
 

@@ -12,7 +12,10 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-piper_server = "http://tf2-translator-tts:5000/synthesize"
+# Use this if running in a Docker container:
+# piper_server = "http://tf2-translator-tts:5000/synthesize"
+# Use this if running on the host:
+piper_server = "http://127.0.0.1:5000/synthesize"
 
 
 def speak_text(text):

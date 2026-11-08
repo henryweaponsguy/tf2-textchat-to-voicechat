@@ -3,7 +3,7 @@ services:
     image: tf2-tts-piper:latest
     container_name: tf2-translator-tts
     volumes:
-      - ./models-tts:/tts/models:ro
+      - ./models-tts:/app/models:ro
     ports:
       - "5000:5000"
     security_opt:
@@ -23,10 +23,10 @@ services:
       # Make sure "console.log" exists before starting the container,
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
-      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
-      - ./translator.sh:/tts/translator.sh:ro
-      - ./get_piper_voice.sh:/tts/get_piper_voice.sh:ro
-      - ./get_translation.sh:/tts/get_translation.sh:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/app/console.log:ro
+      - ./translator.py:/app/translator.py:ro
+      - ./get_piper_voice.py:/app/get_piper_voice.py:ro
+      - ./get_translation.py:/app/get_translation.py:ro
       - ./models-translator:/root/.local/share/argos-translate
     devices:
       - /dev/snd

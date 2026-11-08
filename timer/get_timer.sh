@@ -4,12 +4,12 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 exit_cleanup() {
-    if [ -e "$timer_running_state_file" ]; then
+    if [[ -e "$timer_running_state_file" ]]; then
         rm "$timer_running_state_file"
     fi
 
     timer_pid=$(cat "$timer_pid_file" 2>/dev/null)
-    if [ -n "$timer_pid" ]; then
+    if [[ -n "$timer_pid" ]]; then
         kill "$timer_pid" 2>/dev/null
         wait "$timer_pid" 2>/dev/null
         rm "$timer_pid_file"
@@ -27,7 +27,7 @@ timer_running_state_file="/tmp/timer.running"
 
 
 start_timer() {
-    if [ -e "$timer_running_state_file" ]; then
+    if [[ -e "$timer_running_state_file" ]]; then
         trap - SIGINT SIGTERM EXIT
         return
     fi
@@ -61,7 +61,7 @@ start_timer() {
 
 
 # Determine mode
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     # Command-line mode
     start_timer "$*"
 elif ! tty -s; then

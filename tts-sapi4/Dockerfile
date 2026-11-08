@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /tts
+WORKDIR /app
 # SAPI4 needs to be compiled according to https://github.com/TETYYS/SAPI4
 # Afterwards, the generated files need to be copied to a separate 'SAPI4/' directory
 # (only 'public/', 'libcrypto-1_1.dll', 'libssl-1_1.dll', 'sapi4.dll',
@@ -56,7 +56,7 @@ RUN tar --no-same-permissions -xzf wine.tar.gz && rm wine.tar.gz
 
 COPY nginx.conf /etc/nginx/nginx.conf
 
-WORKDIR /tts/SAPI4
+WORKDIR /app/SAPI4
 
 
 EXPOSE 5491

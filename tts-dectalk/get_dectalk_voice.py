@@ -19,8 +19,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="dectalk_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         # subprocess.run(["say", "-pre", "[:phoneme on]", "-e", "1", "-a", text, "-fo", audio_file])

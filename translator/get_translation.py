@@ -7,6 +7,7 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
+from lexilang.detector import detect as dict_detect
 from langdetect import detect
 from langdetect import LangDetectException
 
@@ -17,23 +18,23 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-translation_server = "http://localhost:5001/translate"
+translation_server = "http://127.0.0.1:5001/translate"
 
 
 def translate(text):
     if not text:
         return
 
-    try:
-        language = detect(text)
-    except LangDetectException:
-        language = "en"
+    if len(text) <= 20:
+        language = dict_detect(text)[0]
+    else:
+        try:
+            language = detect(text)
+        except LangDetectException:
+            language = "en"
 
     if language == "en":
         return
-
-    if language == "zh-cn":
-        language = "zh"
 
     data = {"q": text, "source": language, "target": "en"}
 
@@ -44,7 +45,7 @@ def translate(text):
         method="POST",
     )
 
-    with urllib.request.urlopen(post_request) as response:
+    with urllib.request.urlopen(post_request, timeout=30) as response:
         translation = json.load(response)["translatedText"]
 
     if translation == "null":

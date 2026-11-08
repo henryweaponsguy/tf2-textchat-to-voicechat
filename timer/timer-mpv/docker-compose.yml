@@ -10,10 +10,10 @@ services:
       # Make sure "console.log" exists before starting the container,
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
-      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
-      - ./timer.sh:/tts/timer.sh:ro
-      - ./get_timer.sh:/tts/get_timer.sh:ro
-      - ./sounds:/tts/sounds:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/app/console.log:ro
+      - ./timer.sh:/app/timer.sh:ro
+      - ./get_timer.sh:/app/get_timer.sh:ro
+      - ./sounds:/app/sounds:ro
     devices:
       - /dev/snd
     network_mode: none
