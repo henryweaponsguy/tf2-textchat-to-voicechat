@@ -45,7 +45,7 @@ def translate(text):
         method="POST",
     )
 
-    with urllib.request.urlopen(post_request, timeout=30) as response:
+    with urllib.request.urlopen(post_request) as response:
         translation = json.load(response)["translatedText"]
 
     if translation == "null":

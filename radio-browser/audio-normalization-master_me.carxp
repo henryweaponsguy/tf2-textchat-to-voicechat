@@ -738,7 +738,7 @@
    <Target>Audio Output:Right</Target>
   </Connection>
   <Positions>
-   <Position x1="797" y1="79" pluginId="3">
+   <Position x1="797" y1="80" pluginId="3">
     <Name>master_me</Name>
    </Position>
    <Position x1="600" y1="80" pluginId="2">
