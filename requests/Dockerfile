@@ -12,17 +12,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /tts
+WORKDIR /app
 
 
-RUN curl -fsSL https://deno.land/install.sh | sh -s -- -y
+RUN python3 -m venv .venv
+RUN /app/.venv/bin/pip install \
+    yt-dlp[default] \
+    yt-dlp[deno]
+RUN echo 'source /app/.venv/bin/activate' >> /root/.bashrc
+ENV PATH="/app/.venv/bin:${PATH}"
 
-RUN python3 -m venv venv
-RUN venv/bin/pip install \
-    piper-tts \
-    piper-tts[http] \
-    yt-dlp[default]
-RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
-ENV PATH="/tts/venv/bin:${PATH}"
-
-CMD ["python3", "-m", "piper.http_server", "--data-dir", "models/", "-m", "en_US-joe-medium"]
+CMD ["tail", "-f", "/dev/null"]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
+if [[ -z "$1" ]]; then
     echo "Usage: ${0} <directory>"
     exit 1
 fi
@@ -18,7 +18,7 @@ mapfile -t files < <(
     LC_ALL=C sort -uV
 )
 
-if [ ${#files[@]} -eq 0 ]; then
+if [[ ${#files[@]} -eq 0 ]]; then
     echo "Error: No files found!"
     exit 1
 fi

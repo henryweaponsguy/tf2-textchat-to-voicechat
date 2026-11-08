@@ -4,7 +4,7 @@ virtual_speaker_name="virtual_speaker"
 virtual_microphone_name="virtual_microphone"
 virtual_cable_modules="/tmp/virtual_cable_modules"
 
-if [ ! -f "$virtual_cable_modules" ]; then
+if [[ ! -f "$virtual_cable_modules" ]]; then
     touch "$virtual_cable_modules"
 
     # Create a virtual speaker

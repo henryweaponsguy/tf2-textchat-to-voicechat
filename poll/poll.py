@@ -58,7 +58,7 @@ blacklisted_words = ""
 whitelisted_poll_names = ""
 
 
-piper_server = "http://localhost:5000/synthesize"
+piper_server = "http://127.0.0.1:5000/synthesize"
 poll_thread = None
 poll_open = False
 
@@ -111,8 +111,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         data = {"text": text, "voice": "en_US-joe-medium", "length_scale": "1"}

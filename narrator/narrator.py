@@ -29,7 +29,7 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 
 
 sound_dir = script_dir / "sounds"
-piper_server = "http://localhost:5000/synthesize"
+piper_server = "http://127.0.0.1:5000/synthesize"
 username_voices_file = script_dir / "username_voices.txt"
 
 if not username_voices_file.exists():
@@ -156,8 +156,8 @@ with open(console_log, "r") as log:
 
         with tempfile.NamedTemporaryFile(
             prefix="piper_voice-", suffix=".wav", delete=False
-        ) as tmp:
-            audio_file = tmp.name
+        ) as file:
+            audio_file = file.name
 
         try:
             username_voices = username_voices_file.read_text().splitlines()

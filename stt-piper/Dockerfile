@@ -7,14 +7,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /tts
+WORKDIR /app
 
-RUN python3 -m venv venv
-RUN venv/bin/pip install \
+RUN python3 -m venv .venv
+RUN /app/.venv/bin/pip install \
+    piper-tts[http] \
     sounddevice \
     vosk
-RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
-ENV PATH="/tts/venv/bin:${PATH}"
+RUN echo 'source /app/.venv/bin/activate' >> /root/.bashrc
+ENV PATH="/app/.venv/bin:${PATH}"
 
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python3", "-m", "piper.http_server", "--data-dir", "models-tts/", "-m", "en_US-joe-medium"]

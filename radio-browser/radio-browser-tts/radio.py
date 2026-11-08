@@ -54,7 +54,7 @@ recently_played_length = 5
 # Required votes to skip the currently playing video
 required_vote_count = 5
 
-# The level of announcements.
+# The level of announcements:
 # 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
 announcements_level = 2
 
@@ -82,7 +82,7 @@ blacklisted_words = ""
 
 open(text_message_file, "w").close()
 
-piper_server = "http://localhost:5000/synthesize"
+piper_server = "http://127.0.0.1:5000/synthesize"
 webserver_port = 8000
 radio_lock = Lock()
 sse_client = None
@@ -200,8 +200,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         data = {"text": text, "voice": "en_US-joe-medium", "length_scale": 1}
@@ -242,7 +242,7 @@ def add_to_queue(video_id):
     global current_video
     global sse_client
 
-    print(f"{'Downloading:':<25}{video_id}")
+    print(f"{'Queuing:':<25}{video_id}")
     print(f"{'Queued by:':<25}{username}")
 
     # Check if the video is queued already
@@ -269,7 +269,7 @@ def add_to_queue(video_id):
                 [
                     "yt-dlp",
                     "--js-runtimes",
-                    "deno:/root/.deno/bin/deno",
+                    "deno",
                     "--add-headers",
                     "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                     "--limit-rate",
@@ -444,7 +444,7 @@ Thread(
 ).start()
 
 print(
-    f"\033[35m{'Web server':<25}Listening at http://localhost:{webserver_port}'\033[0m"
+    f"\033[35m{'Web server':<25}Listening at http://127.0.0.1:{webserver_port}'\033[0m"
 )
 
 

@@ -7,9 +7,9 @@ services:
       PULSE_SERVER: unix:/run/user/${UID}/pulse/native
     volumes:
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
-      - ./speech_to_soundboard.py:/tts/speech_to_soundboard.py:ro
-      - ./models:/tts/models:ro
-      - ./sounds:/tts/sounds:ro
+      - ./speech_to_soundboard.py:/app/speech_to_soundboard.py:ro
+      - ./models:/app/models:ro
+      - ./sounds:/app/sounds:ro
     devices:
       - /dev/snd
     network_mode: none

@@ -96,6 +96,8 @@ def apply_dictionary(words, dictionary):
 
 
 def mix_sentences(sound_dir, voice, text, audio_file):
+    word_list.clear()
+
     words = text.split()
 
     for i, word in enumerate(words):

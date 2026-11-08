@@ -53,7 +53,7 @@ recently_played_length = 5
 # Required votes to skip the currently playing file
 required_vote_count = 5
 
-# The level of announcements.
+# The level of announcements:
 # 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
 announcements_level = 2
 
@@ -81,7 +81,7 @@ blacklisted_words = ""
 
 open(text_message_file, "w").close()
 
-piper_server = "http://localhost:5000/synthesize"
+piper_server = "http://127.0.0.1:5000/synthesize"
 download_queue_thread = None
 queue_thread = None
 announcer_process = None
@@ -117,7 +117,7 @@ replacements = [
     ),
 ]
 
-replacements_tts [
+replacements_tts = [
     (re.compile(r"[-_]"), ","),
     (re.compile(r"[^A-Za-z0-9\s'-_]"), ""),
 ]
@@ -131,8 +131,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         data = {"text": text, "voice": "en_US-joe-medium", "length_scale": 1}
@@ -187,7 +187,7 @@ def download_file(video_id, username):
                 [
                     "yt-dlp",
                     "--js-runtimes",
-                    "deno:/root/.deno/bin/deno",
+                    "deno",
                     "--add-headers",
                     "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                     "--limit-rate",
@@ -221,7 +221,7 @@ def download_file(video_id, username):
             [
                 "yt-dlp",
                 "--js-runtimes",
-                "deno:/root/.deno/bin/deno",
+                "deno",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                 "--limit-rate",
@@ -251,7 +251,7 @@ def download_file(video_id, username):
         target_peak = -9
         peak_tolerance = 0.3
 
-        temp_file = Path(f"tmp.{audio_format}")
+        temp_file = audio_file.parent / f"{audio_file.name}-tmp{audio_file.suffix}"
 
         # Get codec, sample rate, channel count and duration
         ffprobe_output = subprocess.run(

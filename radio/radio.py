@@ -150,7 +150,7 @@ def download_file(video_id, username):
                 [
                     "yt-dlp",
                     "--js-runtimes",
-                    "deno:/root/.deno/bin/deno",
+                    "deno",
                     "--add-headers",
                     "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                     "--limit-rate",
@@ -184,7 +184,7 @@ def download_file(video_id, username):
             [
                 "yt-dlp",
                 "--js-runtimes",
-                "deno:/root/.deno/bin/deno",
+                "deno",
                 "--add-headers",
                 "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                 "--limit-rate",
@@ -214,7 +214,7 @@ def download_file(video_id, username):
         target_peak = -9
         peak_tolerance = 0.3
 
-        temp_file = Path(f"tmp.{audio_format}")
+        temp_file = audio_file.parent / f"{audio_file.name}-tmp{audio_file.suffix}"
 
         # Get codec, sample rate, channel count and duration
         ffprobe_output = subprocess.run(

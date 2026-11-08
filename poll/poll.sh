@@ -4,20 +4,20 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 exit_cleanup() {
-    if [ -e "$poll_open_state_file" ]; then
+    if [[ -e "$poll_open_state_file" ]]; then
         rm "$poll_open_state_file"
     fi
 
-    if [ -e "$poll_running_state_file" ]; then
+    if [[ -e "$poll_running_state_file" ]]; then
         rm "$poll_running_state_file"
     fi
 
-    if [ -e "$vote_file" ]; then
+    if [[ -e "$vote_file" ]]; then
         rm "$vote_file"
     fi
 
     poll_pid=$(cat "$poll_pid_file" 2>/dev/null)
-    if [ -n "$poll_pid" ]; then
+    if [[ -n "$poll_pid" ]]; then
         kill "$poll_pid" 2>/dev/null
         wait "$poll_pid" 2>/dev/null
         rm "$poll_pid_file"
@@ -28,7 +28,7 @@ exit_cleanup() {
 trap exit_cleanup SIGINT SIGTERM EXIT
 
 
-piper_server="http://localhost:5000/synthesize"
+piper_server="http://127.0.0.1:5000/synthesize"
 vote_file="${script_dir}/votes.txt"
 poll_pid_file="/tmp/poll.pid"
 poll_open_state_file="/tmp/poll.open"
@@ -140,13 +140,13 @@ while IFS= read -r line; do
 
     if [[ "$line" == *'!startpoll '* ]] && grep -q "${whitelisted_poll_names:-.*}" <<< "$line"; then
         # Check if the poll is running
-        if [ ! -e "$poll_running_state_file" ]; then
+        if [[ ! -e "$poll_running_state_file" ]]; then
             start_poll "$command_input" &
             echo $! > "$poll_pid_file"
         fi
     elif [[ "$line" == *'!poll'* ]]; then
         # Check if the poll is open
-        if [ -e "$poll_open_state_file" ]; then
+        if [[ -e "$poll_open_state_file" ]]; then
             re_username="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  .+"
             if [[ "$line" =~ $re_username ]]; then
                 username="${BASH_REMATCH[3]}"

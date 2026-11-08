@@ -10,7 +10,7 @@ declare -A kill_messages=(
     # Example: ["Engineer Gaming"]="the grease monkey bites the dust!"
 )
 
-piper_server="http://localhost:5000/synthesize"
+piper_server="http://127.0.0.1:5000/synthesize"
 
 
 # Add '-condebug' to TF2's launch parameters.

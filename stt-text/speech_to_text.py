@@ -139,6 +139,7 @@ with sd.RawInputStream(
     rec = KaldiRecognizer(model, sample_rate)
 
     print("Listening...")
+
     while True:
         data = audio_queue.get()
         if rec.AcceptWaveform(data):

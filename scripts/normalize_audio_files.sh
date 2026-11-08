@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
+if [[ -z "$1" ]]; then
     echo "Usage: ${0} <directory>"
     exit 1
 fi
@@ -17,7 +17,7 @@ peak_tolerance="0.3"
 
 for file in "$input_directory"/*; do
     # Only process audio files
-    if [ ! -f "$file" ] || ! (
+    if [[ ! -f "$file" ]] || ! (
             ffprobe \
                 -hide_banner \
                 -v error \

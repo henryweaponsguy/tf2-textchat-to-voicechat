@@ -6,9 +6,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 exit_cleanup() {
-    if [ -f "$mpv_pid_file" ]; then
+    if [[ -f "$mpv_pid_file" ]]; then
         while IFS= read -r mpv_pid; do
-            if [ -n "$mpv_pid" ]; then
+            if [[ -n "$mpv_pid" ]]; then
                 kill "$mpv_pid" 2>/dev/null
                 wait "$mpv_pid" 2>/dev/null
             fi
@@ -38,7 +38,7 @@ mix_sentences() {
 
     # Check if a custom dictionary is available
     custom_dictionary="${sound_dir}/_dictionary.sed"
-    if [ -e "$custom_dictionary" ]; then
+    if [[ -e "$custom_dictionary" ]]; then
         # Replace synonyms and unavailable forms of words with existing words
         read -r -a words <<< "$(sed -Ef "$custom_dictionary" <<< "${words[*]}")"
 
@@ -115,7 +115,7 @@ mix_sentences() {
                 base="${BASH_REMATCH[1]}"
             fi
 
-            if [ -n "$base" ]; then
+            if [[ -n "$base" ]]; then
                 variants+=( "$base" )
                 base_words+=( "$base" )
             fi
@@ -175,7 +175,7 @@ speak_text() {
 
 
 # Determine mode
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     # Command-line mode
     speak_text "$*"
     wait

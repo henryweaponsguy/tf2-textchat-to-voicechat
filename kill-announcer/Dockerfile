@@ -8,14 +8,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /tts
+WORKDIR /app
 
-RUN python3 -m venv venv
-RUN venv/bin/pip install \
-    piper-tts \
+RUN python3 -m venv .venv
+RUN /app/.venv/bin/pip install \
     piper-tts[http]
-RUN echo 'source /tts/venv/bin/activate' >> /root/.bashrc
-ENV PATH="/tts/venv/bin:${PATH}"
+RUN echo 'source /app/.venv/bin/activate' >> /root/.bashrc
+ENV PATH="/app/.venv/bin:${PATH}"
 
 
 CMD ["python3", "-m", "piper.http_server", "--data-dir", "models/", "-m", "en_US-joe-medium"]

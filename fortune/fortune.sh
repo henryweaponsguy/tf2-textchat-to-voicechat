@@ -27,7 +27,7 @@ whitelisted_names=""
 blacklisted_words=""
 
 
-piper_server="http://localhost:5000/synthesize"
+piper_server="http://127.0.0.1:5000/synthesize"
 announcer_pid_file="/tmp/announcer.pid"
 declare -A rate_limiting
 
@@ -63,7 +63,7 @@ EOF
 while IFS= read -r line; do
     # Skip the incoming announcement if there is one playing already
     announcer_pid=$(cat "$announcer_pid_file" 2>/dev/null)
-    if [ -n "$announcer_pid" ]; then
+    if [[ -n "$announcer_pid" ]]; then
         continue
     fi
 

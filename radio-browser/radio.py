@@ -205,7 +205,7 @@ def add_to_queue(video_id):
     global current_video
     global sse_client
 
-    print(f"{'Downloading:':<25}{video_id}")
+    print(f"{'Queuing:':<25}{video_id}")
     print(f"{'Queued by:':<25}{username}")
 
     # Check if the video is queued already
@@ -232,7 +232,7 @@ def add_to_queue(video_id):
                 [
                     "yt-dlp",
                     "--js-runtimes",
-                    "deno:/root/.deno/bin/deno",
+                    "deno",
                     "--add-headers",
                     "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
                     "--limit-rate",
@@ -404,7 +404,7 @@ Thread(
 ).start()
 
 print(
-    f"\033[35m{'Web server':<25}Listening at http://localhost:{webserver_port}'\033[0m"
+    f"\033[35m{'Web server':<25}Listening at http://127.0.0.1:{webserver_port}'\033[0m"
 )
 
 

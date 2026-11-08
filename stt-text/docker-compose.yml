@@ -10,10 +10,10 @@ services:
       # Make sure "console.log" exists before starting the container,
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
-      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/tts/console.log:ro
-      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/cfg/overrides/message.cfg:/tts/message.cfg
-      - ./speech_to_text.py:/tts/speech_to_text.py:ro
-      - ./models:/tts/models:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/app/console.log:ro
+      - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/cfg/overrides/message.cfg:/app/message.cfg
+      - ./speech_to_text.py:/app/speech_to_text.py:ro
+      - ./models:/app/models:ro
     devices:
       - /dev/snd
     network_mode: none

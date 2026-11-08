@@ -93,7 +93,7 @@ convert_numbers_to_words() {
     local words=( )
 
     # Handle negative numbers
-    if [ "${number:0:1}" == "-" ]; then
+    if [[ "${number:0:1}" == "-" ]]; then
         words+=( "negative" )
         number="${number:1}"
     fi
@@ -116,13 +116,13 @@ convert_numbers_to_words() {
     fi
 
     # Handle ordinal numerals
-    if [ -n "$ordinal" ]; then
+    if [[ -n "$ordinal" ]]; then
         last_word="${words[-1]}"
 
-        if [ -n "${IRREGULAR_ORDINALS[$last_word]}" ]; then
+        if [[ -n "${IRREGULAR_ORDINALS[$last_word]}" ]]; then
             last_word="${IRREGULAR_ORDINALS["$last_word"]}"
         else
-            if [ "${last_word: -1}" == "y" ]; then
+            if [[ "${last_word: -1}" == "y" ]]; then
                 last_word="${last_word::-1}ie"
             fi
 

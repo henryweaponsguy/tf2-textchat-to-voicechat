@@ -20,7 +20,7 @@ mix_sentences() {
 
     # Check if a custom dictionary is available
     custom_dictionary="${sound_dir}/_dictionary.sed"
-    if [ -e "$custom_dictionary" ]; then
+    if [[ -e "$custom_dictionary" ]]; then
         # Replace synonyms and unavailable forms of words with existing words
         read -r -a words <<< "$(sed -Ef "$custom_dictionary" <<< "${words[*]}")"
 
@@ -97,7 +97,7 @@ mix_sentences() {
                 base="${BASH_REMATCH[1]}"
             fi
 
-            if [ -n "$base" ]; then
+            if [[ -n "$base" ]]; then
                 variants+=( "$base" )
                 base_words+=( "$base" )
             fi
@@ -141,7 +141,7 @@ mix_sentences() {
         done > "$word_list"
     fi
 
-    if [ -s "$word_list" ]; then
+    if [[ -s "$word_list" ]]; then
         ffmpeg \
             -hide_banner \
             -loglevel error \
@@ -175,7 +175,7 @@ speak_text() {
 
 
 # Determine mode
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
     # Command-line mode
     speak_text "$*"
 elif ! tty -s; then

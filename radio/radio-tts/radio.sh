@@ -8,23 +8,23 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exit_cleanup() {
     > "$text_message_file"
 
-    if [ -e "$skip_vote_file" ]; then
+    if [[ -e "$skip_vote_file" ]]; then
         rm "$skip_vote_file"
     fi
 
-    if [ -e "$skip_voting_open_state_file" ]; then
+    if [[ -e "$skip_voting_open_state_file" ]]; then
         rm "$skip_voting_open_state_file"
     fi
 
     queue_pid=$(cat "$queue_pid_file" 2>/dev/null)
-    if [ -n "$queue_pid" ]; then
+    if [[ -n "$queue_pid" ]]; then
         kill "$queue_pid" 2>/dev/null
         wait "$queue_pid" 2>/dev/null
         rm "$queue_pid_file"
     fi
 
     download_queue_pid=$(cat "$download_queue_pid_file" 2>/dev/null)
-    if [ -n "$download_queue_pid" ]; then
+    if [[ -n "$download_queue_pid" ]]; then
         kill "$download_queue_pid" 2>/dev/null
         wait "$download_queue_pid" 2>/dev/null
         rm "$download_queue_pid_file"
@@ -35,7 +35,7 @@ exit_cleanup() {
 trap exit_cleanup SIGINT SIGTERM EXIT
 
 
-piper_server="http://localhost:5000/synthesize"
+piper_server="http://127.0.0.1:5000/synthesize"
 announcer_pid_file="/tmp/announcer.pid"
 download_queue_pid_file="/tmp/downloader.pid"
 download_queue_file="/tmp/download_queue.txt"
@@ -61,7 +61,7 @@ recently_played_length=5
 # Required votes to skip the currently playing file
 required_vote_count=5
 
-# The level of announcements.
+# The level of announcements:
 # 2 - all announcements, 1 - disables voting announcements, 0 - no announcements
 announcements_level=2
 
@@ -96,7 +96,7 @@ speak_text() {
     local announcer_pid=$(cat "$announcer_pid_file" 2>/dev/null)
 
     # Stop the previous announcement
-    if [ -n "$announcer_pid" ]; then
+    if [[ -n "$announcer_pid" ]]; then
         kill "$announcer_pid" 2>/dev/null
     fi
 
@@ -145,7 +145,7 @@ download_file() {
         # Get the video's filename, title and channel
         local metadata=$(
             yt-dlp \
-                --js-runtimes "deno:/root/.deno/bin/deno" \
+                --js-runtimes "deno" \
                 --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
                 --limit-rate 500K \
                 --skip-download \
@@ -166,7 +166,7 @@ download_file() {
 
         # Download the file
         yt-dlp \
-            --js-runtimes "deno:/root/.deno/bin/deno" \
+            --js-runtimes "deno" \
             --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
             --limit-rate 500K \
             --extract-audio \
@@ -178,7 +178,7 @@ download_file() {
             -- "$video_id"
 
         # Check if the file has been downloaded successfully
-        if [ ! -f "$audio_file" ]; then
+        if [[ ! -f "$audio_file" ]]; then
             audio_file=""
             printf "%-25s%s\n" "Video unavailable:" "$title" >&2
         else
@@ -390,14 +390,14 @@ start_download_queue() {
     while true; do
         download_queue
 
-        inotifywait -e modify "$download_queue_file" &>/dev/null
+        inotifywait -e modify "$download_queue_file" >/dev/null 2>&1
     done
 }
 
 start_queue() {
     trap '
         paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
-        if [ -n "$paplay_pid" ]; then
+        if [[ -n "$paplay_pid" ]]; then
             kill "$paplay_pid" 2>/dev/null
             wait "$paplay_pid" 2>/dev/null
             rm -f "$paplay_pid_file"
@@ -411,7 +411,7 @@ start_queue() {
 
         printf "\033[36m%-25s%s\033[0m\n" "Queue:" "No more files in the queue" >&2
 
-        inotifywait -e modify "$queue_file" &>/dev/null
+        inotifywait -e modify "$queue_file" >/dev/null 2>&1
     done
 }
 
@@ -426,7 +426,7 @@ echo $! > "$queue_pid_file"
 
 
 while IFS= read -r line; do
-    re_message_sent_signal="^text_message_sent \?$"
+    re_message_sent_signal="^text_message_sent ?$"
     if [[ "$line" =~ $re_message_sent_signal ]]; then
         # Clear the old text message
         > "$text_message_file"
@@ -460,7 +460,7 @@ while IFS= read -r line; do
     # Vote to skip the currently playing file
     elif [[ "$line" == *'!skip'* ]]; then
         # Check if there is a file playing
-        if [ -e "$skip_voting_open_state_file" ]; then
+        if [[ -e "$skip_voting_open_state_file" ]]; then
             # Check if the user has not voted yet
             if ! grep -Fq "$(printf "%s" "$username")" "$skip_vote_file"; then
                 printf "%s\n" "$username" >> "$skip_vote_file"

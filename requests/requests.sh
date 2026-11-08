@@ -35,7 +35,7 @@ while IFS= read -r line; do
 
         metadata=$(
             yt-dlp \
-                --js-runtimes "deno:/root/.deno/bin/deno" \
+                --js-runtimes "deno" \
                 --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
                 --limit-rate 500K \
                 --skip-download \

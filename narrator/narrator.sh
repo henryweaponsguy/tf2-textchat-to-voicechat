@@ -5,10 +5,10 @@ shopt -s nullglob
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 sound_dir="${script_dir}/sounds"
-piper_server="http://localhost:5000/synthesize"
+piper_server="http://127.0.0.1:5000/synthesize"
 username_voices_file="${script_dir}/username_voices.txt"
 
-if [ ! -f "$username_voices_file" ]; then
+if [[ ! -f "$username_voices_file" ]]; then
     touch "$username_voices_file"
 fi
 

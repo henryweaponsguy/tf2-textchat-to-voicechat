@@ -55,7 +55,7 @@ else:
 device_info = sd.query_devices(audio_device, "input")
 sample_rate = int(device_info["default_samplerate"])
 
-piper_server = "http://localhost:5000"
+piper_server = "http://127.0.0.1:5000"
 
 # Download the speech recognition model here: https://alphacephei.com/vosk/models and extract the archive to 'models/'.
 # The 'vosk-model-small-en-us-*' model works the best for fast speech recognition and requires around 0.5 GB of RAM.
@@ -96,8 +96,8 @@ def speak_text(text):
 
     with tempfile.NamedTemporaryFile(
         prefix="piper_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+    ) as file:
+        audio_file = file.name
 
     try:
         data = {
