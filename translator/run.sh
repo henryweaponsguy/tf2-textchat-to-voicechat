@@ -30,9 +30,10 @@ if (( ${#missing_dependencies[@]} )); then
     exit 1
 fi
 
-appdata_dir=".appdata"
-venv="${script_dir}/${appdata_dir}/venv"
-venv_sandboxed="/tts/${appdata_dir}/venv"
+appdata_dir="${script_dir}/.appdata"
+appdata_dir_sandboxed="/app/.appdata"
+venv="${appdata_dir}/venv"
+venv_sandboxed="${appdata_dir_sandboxed}/venv"
 
 setup_options=(
     --new-session
@@ -194,8 +195,7 @@ runtime_options=(
     --chdir /app
 
     --ro-bind "/run/user/${UID}/pulse/native" "/run/user/${UID}/pulse/native"
-    --ro-bind "$venv" "$venv_sandboxed"
-    --ro-bind "$venv_tts" "$venv_tts_sandboxed"
+    --ro-bind "$appdata_dir" "$appdata_dir_sandboxed"
     --ro-bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log" "/app/console.log"
     --ro-bind "${script_dir}/translator.py" "/app/translator.py"
     --ro-bind "${script_dir}/get_piper_voice.py" "/app/get_piper_voice.py"
