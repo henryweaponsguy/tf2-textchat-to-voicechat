@@ -48,7 +48,7 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 `tts-piper` - converts text messages to speech using [Piper](https://github.com/OHF-Voice/piper1-gpl) (realistic voices)[^2]
 
-`tts-sapi4` - converts text messages to speech using [SAPI4](https://github.com/TETYYS/SAPI4) (including the BonziBUDDY and Microsoft Sam voices) (requires compiling SAPI4 before running - further instructions in the `Dockerfile`)
+`tts-sapi4` - converts text messages to speech using [SAPI4](https://github.com/TETYYS/SAPI4) (including the BonziBUDDY and Microsoft Sam voices) (if using Docker containers, check the instructions in the `Dockerfile`)
 
 [^1]: Plays sound cues from the `sounds/` directory. Get the sounds [here](https://github.com/henryweaponsguy/tf2-soundpacks)
 
