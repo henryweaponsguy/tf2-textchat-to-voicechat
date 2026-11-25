@@ -54,10 +54,10 @@ sample_rate = int(device_info["default_samplerate"])
 
 
 # Download the speech recognition model here: https://alphacephei.com/vosk/models and extract the archive to 'models/'.
-# The 'vosk-model-small-en-us-*' model works the best for fast speech recognition and requires around 0.5 GB of RAM.
-# The 'vosk-model-en-us-*-gigaspeech' model is more accurate, but somewhat slower and requires 6+ GB of RAM.
-model = Model(str(script_dir / "models" / "vosk-model-en-us-gigaspeech"))
+# The 'vosk-model-small-en-us-*' model works the best for fast speech recognition and requires around 0.5 GB of RAM
 # model = Model(str(script_dir / "models" / "vosk-model-small-en-us"))
+# The 'vosk-model-en-us-*-gigaspeech' model is more accurate, but somewhat slower and requires 6+ GB of RAM
+model = Model(str(script_dir / "models" / "vosk-model-en-us-gigaspeech"))
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
