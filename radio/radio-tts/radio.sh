@@ -339,8 +339,6 @@ play_queue() {
         if [[ -f "$audio_file" ]]; then
             printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file_stem" >&2
 
-            [[ "$audio_file_stem" =~ \(([A-Za-z0-9_-]+)\)$ ]] && local video_id="${BASH_REMATCH[1]}"
-
             local clean_title="$(sed -E "${replacements[@]}" <<< "$audio_file_stem")"
 
             if (( announcements_level >= 1 )); then

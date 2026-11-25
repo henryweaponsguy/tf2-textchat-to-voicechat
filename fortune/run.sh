@@ -17,7 +17,7 @@ for dependency in "${system_dependencies[@]}"; do
 done
 
 if (( ${#missing_dependencies[@]} )); then
-    printf "%s\n" "ERROR: Missing system dependencies: ${missing_dependencies[*]}"
+    printf "%s\n" "ERROR: Missing dependencies: ${missing_dependencies[*]}"
 
     exit 1
 fi

@@ -93,6 +93,7 @@ re_blacklisted_users="${blacklisted_users:-$^}"
 re_whitelisted_users="${whitelisted_users:-.*}"
 re_blacklisted_words="${blacklisted_words:-$^}"
 re_url="(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
+re_video_id="\(([A-Za-z0-9_-]+)\)$"
 
 replacements=(
     -e "s/\([A-Za-z0-9_-]+\)$//g"
@@ -349,7 +350,10 @@ play_queue() {
         if [[ -f "$audio_file" ]]; then
             printf "\033[33m%-25s%s\033[0m\n" "Now playing:" "$audio_file_stem" >&2
 
-            [[ "$audio_file_stem" =~ \(([A-Za-z0-9_-]+)\)$ ]] && local video_id="${BASH_REMATCH[1]}"
+            local video_id=""
+            if [[ "$audio_file_stem" =~ $re_video_id ]]; then
+                video_id="${BASH_REMATCH[1]}"
+            fi
 
             local clean_title="$(sed -E "${replacements[@]}" <<< "$audio_file_stem")"
 

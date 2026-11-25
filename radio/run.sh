@@ -4,10 +4,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 system_dependencies=(
-    "bc"
     "bwrap"
-    "inotifywait"
-    "jq"
     "paplay"
     "python3"
 )
