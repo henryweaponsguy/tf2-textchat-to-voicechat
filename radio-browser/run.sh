@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -131,6 +131,7 @@ runtime_options=(
     --ro-bind "$venv" "$venv_sandboxed"
     --ro-bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log" "/app/console.log"
     --bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/cfg/overrides/message.cfg" "/app/message.cfg"
+    --ro-bind "${script_dir}/index.html" "/app/index.html"
     --ro-bind "${script_dir}/radio.py" "/app/radio.py"
     --ro-bind "${script_dir}/sounds" "/app/sounds"
     --bind "${script_dir}/queue" "/app/queue"
@@ -140,7 +141,7 @@ runtime_options=(
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" "/app/radio.py"
+    "/app/radio.py"
 ' _ "$venv_sandboxed"

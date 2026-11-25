@@ -2,13 +2,11 @@ FROM debian:latest
 
 RUN apt-get update && apt-get install -y \
     bc \
-    curl \
     ffmpeg \
     inotify-tools \
     jq \
     pulseaudio \
     python3-venv \
-    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 

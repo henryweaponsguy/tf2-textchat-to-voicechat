@@ -1,10 +1,13 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 system_dependencies=(
+    "bc"
     "bwrap"
+    "inotifywait"
+    "jq"
     "paplay"
     "python3"
 )
@@ -140,7 +143,7 @@ runtime_options=(
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" "/app/radio.py"
+    "/app/radio.py"
 ' _ "$venv_sandboxed"

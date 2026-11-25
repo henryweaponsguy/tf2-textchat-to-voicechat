@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 import json
 import re
 import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 script_dir = Path(__file__).resolve().parent
@@ -20,32 +23,26 @@ console_log = script_dir / "console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-blacklisted_names = ""
+blacklisted_users = ""
 
 # Alternatively, a whitelist:
-whitelisted_names = ""
+whitelisted_users = ""
 
 # Word blacklist:
 # Example: "dQw4w9WgXcQ|dwDns8x3Jb4|ZZ5LpwO-An4"
 blacklisted_words = ""
 
 
-re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !request (.+)"
-)
-re_blacklisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
-)
-re_whitelisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
-)
+re_line = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(?i:!request) +(.+)")
+re_blacklisted_users = re.compile(rf"{blacklisted_users or '$^'}")
+re_whitelisted_users = re.compile(rf"{whitelisted_users or '.*'}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_url = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
 )
 
 
-with open(console_log, "r") as log:
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -58,35 +55,42 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
-        # Search for lines containing the command
-        if not re_command.search(line):
+
+        # Search for lines containing a command
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
+
+        # Extract the username and the video URL
+        username = matched_line.group(3)
+        message = matched_line.group(4)
+
         # Remove messages from blacklisted players
-        if re_blacklisted_names.search(line):
+        if re_blacklisted_users.search(username):
             continue
+
         # Keep messages only from whitelisted players
-        if not re_whitelisted_names.search(line):
+        if not re_whitelisted_users.search(username):
             continue
+
         # Remove messages with blacklisted words
-        if re_blacklisted_words.search(line):
+        if re_blacklisted_words.search(message):
             continue
 
-        # Extract usernames and messages
-        matched_command = re_command.match(line)
-        username = matched_command.group(3)
-        message = matched_command.group(4)
-        video_id = re_url.match(message).group(4)
+        title = ""
+        channel = ""
+        # Check if the video ID is valid
+        matched_video_url = re_url.match(message)
+        if matched_video_url:
+            video_id = matched_video_url.group(4)
 
-        title=""
-        channel=""
-        if video_id:
             yt_dlp_output = subprocess.run(
                 [
                     "yt-dlp",
                     "--js-runtimes",
                     "deno",
                     "--add-headers",
-                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
                     "--limit-rate",
                     "500K",
                     "--skip-download",

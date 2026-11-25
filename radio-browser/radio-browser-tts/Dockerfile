@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     pulseaudio \
     python3-venv \
-    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 

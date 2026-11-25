@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -6,17 +6,19 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Target list:
 declare -A kill_messages=(
     # Example: ["John"]="John is gone!|John died. Shit happens."
-    # Example: ["pablo\.gonzales\.2007"]="pablo is down!|pablo got owned!"
+    # Example: ["pablo.gonzales.2007"]="pablo is down!|pablo got owned!"
     # Example: ["Engineer Gaming"]="the grease monkey bites the dust!"
 )
-
-piper_server="http://127.0.0.1:5000/synthesize"
-
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="${script_dir}/console.log"
+
+
+piper_server="http://127.0.0.1:5000/synthesize"
+
+re_line="^((.+) (suicided|died)|.+ killed (.+) with .+)\.( \(crit\))?$"
 
 
 speak_text() {
@@ -42,19 +44,19 @@ EOF
 }
 
 
-while IFS= read -r username; do
+while IFS= read -r line; do
+    # Extract usernames
+    if [[ "$line" =~ $re_line ]]; then
+        username="${BASH_REMATCH[2]:-${BASH_REMATCH[4]}}"
+    else
+        continue
+    fi
+
     if [[ -v kill_messages["$username"] ]]; then
         IFS="|" read -ra user_messages <<< "${kill_messages[$username]}"
         kill_message="${user_messages[RANDOM % ${#user_messages[@]}]}"
 
         speak_text "$kill_message" &
     fi
-done < <(
-    # Continuously read the last line of the log as it is updated
-    stdbuf -oL tail -fn 1 "$console_log" |
-    # Search for lines containing the command
-    grep --line-buffered "^\(.\+ \(suicided\|died\)\|.\+ killed .\+ with .\+\)\.\( (crit)\)\?$" |
-    # Extract the username
-    stdbuf -o0 sed -E 's/^(.+) (suicided|died)\.( \(crit\))?$/\1/' |
-    stdbuf -o0 sed -E 's/^.+ killed (.+) with .+\.( \(crit\))?$/\1/'
-)
+# Continuously read the last line of the log as it is updated
+done < <(tail -fn 1 "$console_log")

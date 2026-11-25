@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -103,6 +103,10 @@ fi
 
 mkdir -p "${script_dir}/models"
 
+username_voices_file="username_voices.txt"
+
+touch "$username_voices_file"
+
 runtime_options=(
     --new-session
     --die-with-parent
@@ -131,14 +135,19 @@ runtime_options=(
     --ro-bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log" "/app/console.log"
     --ro-bind "${script_dir}/narrator.py" "/app/narrator.py"
     --ro-bind "${script_dir}/models" "/app/models"
+    --ro-bind "${script_dir}/sounds" "/app/sounds"
+    --bind "${script_dir}/$username_voices_file" "/app/$username_voices_file"
 
     --setenv PULSE_SERVER "unix:/run/user/${UID}/pulse/native"
 )
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
-    "$venv/bin/python3" "/app/narrator.py"
+    python3 -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
+
+    sleep 0.5
+
+    "/app/narrator.py"
 ' _ "$venv_sandboxed"

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import random
 import re
@@ -25,18 +27,15 @@ kill_messages = {
     # Example: "Engineer Gaming": ["the grease monkey bites the dust!"],
 }
 
-piper_server = "http://127.0.0.1:5000/synthesize"
-
-
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
 
-re_command = re.compile(
-    r"^((.+) (suicided|died)|.+ killed (.+) with .+)\.( \(crit\))?$"
-)
+piper_server = "http://127.0.0.1:5000/synthesize"
+
+re_line = re.compile(r"^((.+) (suicided|died)|.+ killed (.+) with .+)\.( \(crit\))?$")
 
 
 def speak_text(text):
@@ -77,7 +76,7 @@ def speak_text(text):
         Path(audio_file).unlink(missing_ok=True)
 
 
-with open(console_log, "r") as log:
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -90,13 +89,14 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
+
         # Search for lines containing the command
-        if not re_command.search(line):
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
 
-        # Extract the username
-        matched_command = re_command.match(line)
-        username = matched_command.group(2) or matched_command.group(4)
+        # Extract usernames
+        username = matched_line.group(2) or matched_line.group(4)
 
         if username in kill_messages:
             kill_message = random.choice(kill_messages[username])

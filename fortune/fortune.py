@@ -1,21 +1,18 @@
+#!/usr/bin/env python3
+
 import random
 import re
 import signal
-import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
-from threading import Thread
 
 script_dir = Path(__file__).resolve().parent
 
 
 def exit_cleanup(signum, frame):
-    for file in Path(tempfile.gettempdir()).glob("piper_voice-*.wav"):
-        try:
-            file.unlink()
-        except FileNotFoundError:
-            pass
+    open(text_message_file, "w").close()
 
     sys.exit(0)
 
@@ -26,85 +23,58 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 
 
 # Minimum time between messages (in seconds)
-rate_limit = 0
+rate_limit = 5
 
 # Fortune list file
 fortune_file = script_dir / "fortunes.txt"
-
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
+# Location of the file storing generated text chat messages.
+# This file should be in the same directory as TF2's autoexec.cfg
+text_message_file = script_dir / "message.cfg"
+
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-blacklisted_names = ""
+blacklisted_users = ""
 
 # Alternatively, a whitelist:
-whitelisted_names = ""
+whitelisted_users = ""
 
 
-with open(fortune_file, "r") as file:
-    fortunes = file.readlines()
+open(text_message_file, "w").close()
 
-piper_server = "http://127.0.0.1:5000/synthesize"
-announcer_process = None
-rate_limiting = {}
+last_text_message_time = None
 
-previous_line = None
-
-re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !fortune")
-re_blacklisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
-)
-re_whitelisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
-)
+re_line = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.+)")
+re_command = re.compile(r"^((?i:!fortune))")
+re_text_message_signal = re.compile(r"^\[ ?FORTUNE\]")
+re_blacklisted_users = re.compile(rf"{blacklisted_users or '$^'}")
+re_whitelisted_users = re.compile(rf"{whitelisted_users or '.*'}")
 
 
-def speak_text(text):
-    global announcer_process
+def send_text_message(text):
+    global last_text_message_time
 
-    if not text:
-        return
+    text_message = " ".join(text.split())[:127]
 
-    with tempfile.NamedTemporaryFile(
-        prefix="piper_voice-", suffix=".wav", delete=False
-    ) as file:
-        audio_file = file.name
+    with open(text_message_file, "w") as file:
+        file.write(f'say "{text_message}"\n')
 
-    try:
-        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": 1}
-
-        post_request = urllib.request.Request(
-            piper_server,
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        with urllib.request.urlopen(post_request) as response, open(
-            audio_file, "wb"
-        ) as file:
-            file.write(response.read())
-
-        announcer_process = subprocess.Popen(
-            [
-                "paplay",
-                "--device=virtual_speaker",
-                "--client-name=piper",
-                audio_file,
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        announcer_process.wait()
-    finally:
-        Path(audio_file).unlink(missing_ok=True)
+    last_text_message_time = time.time()
 
 
-with open(console_log, "r") as log:
+def clear_text_message():
+    global last_text_message_time
+
+    open(text_message_file, "w").close()
+    last_text_message_time = None
+
+
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -117,41 +87,45 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
-        # Search for lines containing the command
-        if not re_command.search(line):
+
+        # Search for lines containing a message
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
+
+        # Extract the username and the message
+        username = matched_line.group(3)
+        message = matched_line.group(4)
+
         # Remove messages from blacklisted players
-        if re_blacklisted_names.search(line):
+        if re_blacklisted_users.search(username):
             continue
+
         # Keep messages only from whitelisted players
-        if not re_whitelisted_names.search(line):
-            continue
-        # Remove duplicate messages
-        # if line == previous_line:
-        #    continue
-        # previous_line = line
-
-        # Skip the incoming announcement if there is one playing already
-        if announcer_process and announcer_process.poll() is None:
+        if not re_whitelisted_users.search(username):
             continue
 
-        # Extract usernames
-        matched_command = re_command.match(line)
-        username = matched_command.group(3)
-
-        current_time = int(time.time())
-
-        if username in rate_limiting and (
-            current_time - rate_limiting[username] <= rate_limit
+        # Clear the old text message
+        if re_text_message_signal.search(message) or (
+            last_text_message_time and (time.time() - last_text_message_time > 5)
         ):
+            clear_text_message()
             continue
 
-        rate_limiting[username] = current_time
+        # Search for messages containing a command
+        matched_command = re_command.match(message)
+        if not matched_command:
+            continue
 
-        selected_fortune = random.choice(fortune.strip() for fortune in fortunes if fortune.strip())
+        # Apply rate limiting
+        if last_text_message_time and (time.time() - last_text_message_time <= rate_limit):
+            continue
 
-        Thread(
-            target=speak_text,
-            args=(selected_fortune,),
-            daemon=True,
-        ).start()
+        with open(fortune_file, "r") as file:
+            fortunes = file.readlines()
+
+        selected_fortune = random.choice(
+            [fortune.strip() for fortune in fortunes if fortune.strip()]
+        )
+
+        send_text_message(f"[FORTUNE] {selected_fortune}")

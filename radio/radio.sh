@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 shopt -s nullglob
 
@@ -8,12 +8,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exit_cleanup() {
     > "$text_message_file"
 
-    if [[ -e "$skip_vote_file" ]]; then
-        rm "$skip_vote_file"
-    fi
-
-    if [[ -e "$skip_voting_open_state_file" ]]; then
-        rm "$skip_voting_open_state_file"
+    if [[ -e "$voting_open_state_file" ]]; then
+        rm "$voting_open_state_file"
     fi
 
     queue_pid=$(cat "$queue_pid_file" 2>/dev/null)
@@ -31,25 +27,9 @@ exit_cleanup() {
     fi
 }
 
+
 # Exit cleanly on CTRL+C and system shutdown
 trap exit_cleanup SIGINT SIGTERM EXIT
-
-
-download_queue_pid_file="/tmp/downloader.pid"
-download_queue_file="/tmp/download_queue.txt"
-paplay_pid_file="/tmp/paplay.pid"
-queue_pid_file="/tmp/queue.pid"
-queue_dir="${script_dir}/queue"
-queue_file="${queue_dir}/queue.txt"
-recently_played_file="${queue_dir}/recently_played.txt"
-skip_vote_file="/tmp/skip_votes.txt"
-skip_voting_open_state_file="/tmp/skip_voting.open"
-
-mkdir -p "$queue_dir"
-touch "$download_queue_file"
-touch "$queue_file"
-touch "$recently_played_file"
-touch "$skip_vote_file"
 
 
 # The length of the recently played list (-1 to make it infinite).
@@ -59,33 +39,80 @@ recently_played_length=5
 # Required votes to skip the currently playing file
 required_vote_count=5
 
+# Chance of playing a sound cue between files (0-100)
+interlude_chance=100
+
 # Announcement sounds directory
 sound_dir="${script_dir}/sounds"
-
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="${script_dir}/console.log"
 
-# Location of the file for storing generated text chat messages.
+# Location of the file storing generated text chat messages.
 # This file should be in the same directory as TF2's autoexec.cfg
 text_message_file="${script_dir}/message.cfg"
 
 # User blacklist:
-# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
-blacklisted_names=""
+# Example: "John|pablo\.gonzales\.2007|Engineer Gaming"
+blacklisted_users=""
 
 # Alternatively, a whitelist:
-whitelisted_names=""
+whitelisted_users=""
 
 # Word blacklist:
-# Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
+# Example: "dQw4w9WgXcQ|dwDns8x3Jb4|ZZ5LpwO-An4"
 blacklisted_words=""
 
 
+paplay_pid_file="/tmp/paplay.pid"
+queue_pid_file="/tmp/queue.pid"
+download_queue_pid_file="/tmp/downloader.pid"
+queue_dir="${script_dir}/queue"
+queue_file="${queue_dir}/queue.txt"
+download_queue_file="${queue_dir}/download_queue.txt"
+recently_played_file="${queue_dir}/recently_played.txt"
+voting_open_state_file="/tmp/voting.open"
+
+mkdir -p "$queue_dir"
+
+for file in "$queue_file" "$download_queue_file" "$recently_played_file"; do
+    touch "$file"
+done
+
 > "$text_message_file"
 
+declare -A vote_list
+last_text_message_time=""
+
+re_line="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.*)"
+re_command=("^(![qQ][uU][eE][uU][eE]|![sS][kK][iI][pP]) *(.+)?")
+re_text_message_signal=("^\[ ?RADIO\]")
+re_blacklisted_users="${blacklisted_users:-$^}"
+re_whitelisted_users="${whitelisted_users:-.*}"
+re_blacklisted_words="${blacklisted_words:-$^}"
+re_url="(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
+
+replacements=(
+    -e "s/\([A-Za-z0-9_-]+\)$//g"
+    -e "s/[[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[]\)] *//gI"
+)
+
+
+send_text_message() {
+    local text_message="$(sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' <<< "$1")"
+    text_message="${text_message:0:127}"
+
+    printf "%s\n" "say \"${text_message}\"" > "$text_message_file"
+
+    last_text_message_time="$(date +%s)"
+}
+
+clear_text_message() {
+    > "$text_message_file"
+    last_text_message_time=""
+}
 
 play_sound() {
     local sound="$1"
@@ -126,20 +153,24 @@ download_file() {
         printf "%-25s%s\n" "Already downloaded:" "$audio_file_stem" >&2
     else
         # Get the video's filename, title and channel
-        local metadata=$(
+        local yt_dlp_output
+        if ! yt_dlp_output="$(
             yt-dlp \
                 --js-runtimes "deno" \
-                --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
+                --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36" \
                 --limit-rate 500K \
                 --skip-download \
                 --no-warnings \
                 -o "%(title)s" \
-                --print "%(filename)s--SEP--%(channel)s" \
-                -- "$video_id"
-        )
+                --print-json \
+                -- "$video_id" 2>&1
+        )"; then
+            printf '\033[31m%-25s%s\033[0m\n' "yt-dlp error:" "$yt_dlp_output" >&2
+            return
+        fi
 
-        local title="${metadata%%--SEP--*}"
-        local channel="${metadata#*--SEP--}"
+        local title="$(jq -r '.filename' <<< "$yt_dlp_output")"
+        local channel="$(jq -r '.channel' <<< "$yt_dlp_output")"
         local audio_file="$queue_dir/$title ($video_id).$audio_format"
         local audio_file_stem=${audio_file##*/}
         audio_file_stem=${audio_file_stem%.*}
@@ -214,6 +245,7 @@ download_file() {
                     -acodec "$codec" \
                     -ar "$sample_rate" \
                     -ac "$channels" \
+                    -y \
                     "$temp_file" \
                 && mv "$temp_file" "$audio_file"
             else
@@ -237,7 +269,7 @@ download_file() {
 
                 # Skip silent files
                 if [[ "$input_i" != "-inf" ]]; then
-                # Remove silence from the beginning and the end of the file and normalize it
+                    # Normalize the file
                     ffmpeg \
                         -hide_banner \
                         -loglevel error \
@@ -255,6 +287,7 @@ download_file() {
                         -acodec "$codec" \
                         -ar "$sample_rate" \
                         -ac "$channels" \
+                        -y \
                         "$temp_file" \
                     && mv "$temp_file" "$audio_file"
                 fi
@@ -318,26 +351,25 @@ play_queue() {
 
             [[ "$audio_file_stem" =~ \(([A-Za-z0-9_-]+)\)$ ]] && local video_id="${BASH_REMATCH[1]}"
 
-            local clean_title="$(printf "%s" "$audio_file_stem" | sed -E \
-                -e "s/\([A-Za-z0-9_-]+\)$//g" \
-                -e "s/[[\(]( *([48]k|hd|hq|music|official|remastered|audio|video)){1,7}[]\)] *//gI" \
-            )"
+            local clean_title="$(sed -E "${replacements[@]}" <<< "$audio_file_stem")"
+
+            if (( RANDOM % 100 < interlude_chance )); then
+                play_sound "interlude"
+            fi
 
             local text_message_prefix="[RADIO] "
             local text_message_suffix=""
             [[ -n "$video_id" ]] && text_message_suffix=" ($video_id)"
             local truncated_title_length=$((127 - ${#text_message_prefix} - ${#text_message_suffix}))
-            local truncated_title="$(printf "%s" "$clean_title" | sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;')"
+            local truncated_title="$(sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' <<< "$clean_title")"
             truncated_title="${truncated_title:0:$truncated_title_length}"
 
-            printf "%s\n" "say \"${text_message_prefix}${truncated_title}${text_message_suffix}\";echo \"text_message_sent\"" > "$text_message_file"
+            send_text_message "${text_message_prefix}${truncated_title}${text_message_suffix}"
 
-            play_sound "interlude"
+            # Clear votes
+            vote_list=()
 
-            # Clear skip votes
-            > "$skip_vote_file"
-
-            touch "$skip_voting_open_state_file"
+            touch "$voting_open_state_file"
 
             paplay --device=virtual_speaker --client-name=radio "$audio_file" >/dev/null 2>&1 &
             local paplay_pid=$!
@@ -345,7 +377,7 @@ play_queue() {
             wait "$paplay_pid"
             > "$paplay_pid_file"
 
-            rm "$skip_voting_open_state_file"
+            rm "$voting_open_state_file"
         else
             printf "\033[36m%-25s%s\033[0m\n" "File not found:" "$audio_file" >&2
         fi
@@ -353,9 +385,6 @@ play_queue() {
 }
 
 skip_current() {
-    # Clear skip votes
-    > "$skip_vote_file"
-
     local paplay_pid=$(cat "$paplay_pid_file" 2>/dev/null)
     if [[ -n "$paplay_pid" ]]; then
         kill "$paplay_pid" 2>/dev/null
@@ -402,50 +431,66 @@ echo $! > "$queue_pid_file"
 
 
 while IFS= read -r line; do
-    re_message_sent_signal="^text_message_sent ?$"
-    if [[ "$line" =~ $re_message_sent_signal ]]; then
-        # Clear the old text message
-        > "$text_message_file"
-
+    # Search for lines containing a message
+    if [[ "$line" =~ $re_line ]]; then
+        # Extract the username and the message
+        username="${BASH_REMATCH[3]}"
+        message="${BASH_REMATCH[4]}"
+    else
         continue
     fi
 
-    line="$(
-        printf "%s\n" "$line" |
-        # Search for lines containing the command
-        grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !\(queue\|skip\)" |
-        # Remove messages from blacklisted players
-        grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
-        # Keep messages only from whitelisted players
-        grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  !" |
-        # Remove messages with blacklisted words
-        grep --line-buffered -v "${blacklisted_words:-$^}"
-    )"
-
-    [[ -z "$line" ]] && continue
-
-    re_username="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  .+"
-    if [[ "$line" =~ $re_username ]]; then
-        username="${BASH_REMATCH[3]}"
+    # Remove messages from blacklisted players
+    if [[ "$username" =~ $re_blacklisted_users ]]; then
+        continue
     fi
 
-    # Extract YouTube URLs
-    if [[ "$line" == *'!queue'* ]] &&
-    [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+) ]]; then
-        printf "%s\t%s\n" "${BASH_REMATCH[4]}" "$username" >> "$download_queue_file"
-    # Vote to skip the currently playing file
-    elif [[ "$line" == *'!skip'* ]]; then
-        # Check if there is a file playing
-        if [[ -e "$skip_voting_open_state_file" ]]; then
-            # Check if the user has not voted yet
-            if ! grep -Fq "$(printf "%s" "$username")" "$skip_vote_file"; then
-                printf "%s\n" "$username" >> "$skip_vote_file"
+    # Keep messages only from whitelisted players
+    if [[ ! "$username" =~ $re_whitelisted_users ]]; then
+        continue
+    fi
 
-                remaining_vote_count=$(( required_vote_count - $(wc -l < "$skip_vote_file") ))
+    # Clear the old text message
+    if [[ "$message" =~ $re_text_message_signal ]] || (
+        [[ -n "$last_text_message_time" ]] && (( $(date +%s) - last_text_message_time > 5 ))
+    ); then
+        clear_text_message
+        continue
+    fi
+
+    # Remove messages with blacklisted words
+    shopt -s nocasematch
+    if [[ "$message" =~ $re_blacklisted_words ]]; then
+        continue
+    fi
+    shopt -u nocasematch
+
+    # Search for messages containing a command
+    if [[ "$message" =~ $re_command ]]; then
+        # Extract the command and its argument
+        command_name="${BASH_REMATCH[1],,}"
+        command_text="${BASH_REMATCH[2]}"
+    else
+        continue
+    fi
+
+    if [[ "$command_name" == '!queue' ]] && [[ "$command_text" =~ $re_url ]]; then
+        video_id="${BASH_REMATCH[4]}"
+
+        printf "%s\t%s\n" "$video_id" "$username" >> "$download_queue_file"
+    # Vote to skip the currently playing file
+    elif [[ "$command_name" == '!skip' ]]; then
+        # Check if there is a file playing
+        if [[ -e "$voting_open_state_file" ]]; then
+            # Check if the user has not voted yet
+            if [[ ! -v vote_list["$username"] ]]; then
+                vote_list["$username"]="$vote"
+
+                remaining_vote_count=$(( required_vote_count - ${#vote_list[@]} ))
 
                 printf "\033[34m%-25s%-10s%s\033[0m\n" "Voted to skip:" "$(( required_vote_count - remaining_vote_count ))/$required_vote_count:" "$username" >&2
 
-                printf "%s\n" "say \"[RADIO] Remaining votes: ${remaining_vote_count}\";echo \"text_message_sent\"" > "$text_message_file"
+                send_text_message "[RADIO] Remaining votes: ${remaining_vote_count}"
 
                 if (( remaining_vote_count > 0 )); then
                     play_sound "$remaining_vote_count" &
@@ -453,14 +498,12 @@ while IFS= read -r line; do
                 else
                     printf "\033[36m%-25s%s\033[0m\n" "Queue:" "Skipping the file" >&2
 
-                    > "$text_message_file"
+                    clear_text_message
 
                     skip_current
                 fi
             fi
         fi
     fi
-done < <(
-    # Continuously read the last line of the log as it is updated
-    stdbuf -oL tail -fn 1 "$console_log"
-)
+# Continuously read the last line of the log as it is updated
+done < <(tail -fn 1 "$console_log")

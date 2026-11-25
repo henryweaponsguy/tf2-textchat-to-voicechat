@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -137,8 +137,11 @@ runtime_options=(
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
-    "$venv/bin/python3" "/app/kill_announcer.py"
+    python3 -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
+
+    sleep 0.5
+
+    "/app/kill_announcer.py"
 ' _ "$venv_sandboxed"

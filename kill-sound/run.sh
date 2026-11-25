@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -55,4 +55,4 @@ runtime_options=(
     --setenv PULSE_SERVER "unix:/run/user/${UID}/pulse/native"
 )
 
-exec bwrap "${runtime_options[@]}" "/usr/bin/python3" "/app/kill_sound.py"
+exec bwrap "${runtime_options[@]}" "/app/kill_sound.py"

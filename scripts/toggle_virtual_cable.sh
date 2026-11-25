@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 virtual_speaker_name="virtual_speaker"
 virtual_microphone_name="virtual_microphone"

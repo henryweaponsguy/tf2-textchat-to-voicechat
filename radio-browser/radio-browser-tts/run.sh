@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -131,7 +131,7 @@ runtime_options=(
     --ro-bind "/run/user/${UID}/pulse/native" "/run/user/${UID}/pulse/native"
     --ro-bind "$venv" "$venv_sandboxed"
     --ro-bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log" "/app/console.log"
-    --bind "${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/cfg/overrides/message.cfg" "/app/message.cfg"
+    --ro-bind "${script_dir}/index.html" "/app/index.html"
     --ro-bind "${script_dir}/radio.py" "/app/radio.py"
     --ro-bind "${script_dir}/models" "/app/models"
     --bind "${script_dir}/queue" "/app/queue"
@@ -141,8 +141,11 @@ runtime_options=(
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
-    "$venv/bin/python3" "/app/radio.py"
+    python3 -m piper.http_server --data-dir models/ -m "en_US-joe-medium" >/dev/null 2>&1 &
+
+    sleep 0.5
+
+    "/app/radio.py"
 ' _ "$venv_sandboxed"

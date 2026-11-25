@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import http.server
 import json
 import random
@@ -25,18 +27,6 @@ signal.signal(signal.SIGINT, exit_cleanup)
 signal.signal(signal.SIGTERM, exit_cleanup)
 
 
-# Queue management files
-queue_dir = script_dir / "queue"
-queue_file = queue_dir / "queue.txt"
-recently_played_file = queue_dir / "recently_played.txt"
-
-queue_dir.mkdir(parents=True, exist_ok=True)
-
-for file in [queue_file, recently_played_file]:
-    if not file.exists():
-        file.touch()
-
-
 # The length of the recently played list (-1 to make it infinite).
 # Videos in the recently played list cannot be queued again
 recently_played_length = 5
@@ -44,54 +34,59 @@ recently_played_length = 5
 # Required votes to skip the currently playing video
 required_vote_count = 5
 
+# Chance of playing a sound cue between files (0-100)
+interlude_chance = 100
+
 # Announcement sounds directory
 sound_dir = script_dir / "sounds"
-
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
-# Location of the file for storing generated text chat messages.
+# Location of the file storing generated text chat messages.
 # This file should be in the same directory as TF2's autoexec.cfg
 text_message_file = script_dir / "message.cfg"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-blacklisted_names = ""
+blacklisted_users = ""
 
 # Alternatively, a whitelist:
-whitelisted_names = ""
+whitelisted_users = ""
 
 # Word blacklist:
 # Example: "dQw4w9WgXcQ|dwDns8x3Jb4|ZZ5LpwO-An4"
 blacklisted_words = ""
 
 
+queue_dir = script_dir / "queue"
+queue_file = queue_dir / "queue.txt"
+recently_played_file = queue_dir / "recently_played.txt"
+
+queue_dir.mkdir(parents=True, exist_ok=True)
+
+for file in [queue_file, recently_played_file]:
+    file.touch()
+
 open(text_message_file, "w").close()
 
 webserver_port = 8000
 radio_lock = Lock()
 sse_client = None
-queue_thread = None
 announcer_process = None
+queue_thread = None
 current_video = None
-skip_voting_open = False
+voting_open = False
+vote_list = set()
+last_text_message_time = None
 
-
-skip_vote_list = set()
-
-re_message_sent_signal = re.compile(r"^text_message_sent ?$")
-re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(queue|skip) *(.+)?"
-)
-re_blacklisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
-)
-re_whitelisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
-)
+re_line = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.+)")
+re_command = re.compile(r"^(?i:(!queue|!skip)) *(.+)?")
+re_text_message_signal = re.compile(r"^\[ ?RADIO\]")
+re_blacklisted_users = re.compile(rf"{blacklisted_users or '$^'}")
+re_whitelisted_users = re.compile(rf"{whitelisted_users or '.*'}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_url = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
@@ -175,6 +170,24 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+def send_text_message(text):
+    global last_text_message_time
+
+    text_message = " ".join(text.split())[:127]
+
+    with open(text_message_file, "w") as file:
+        file.write(f'say "{text_message}"\n')
+
+    last_text_message_time = time.time()
+
+
+def clear_text_message():
+    global last_text_message_time
+
+    open(text_message_file, "w").close()
+    last_text_message_time = None
+
+
 def play_sound(sound):
     # Match files
     matched_files = (
@@ -234,7 +247,7 @@ def add_to_queue(video_id):
                     "--js-runtimes",
                     "deno",
                     "--add-headers",
-                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
                     "--limit-rate",
                     "500K",
                     "--skip-download",
@@ -252,9 +265,7 @@ def add_to_queue(video_id):
             title = video_info["title"]
             channel = video_info["channel"]
         except json.JSONDecodeError:
-            print(
-                f"\033[31m{'Error:':<25}{'yt-dlp failed to extract video metadata'}\033[0m"
-            )
+            print(f"\033[31m{'yt-dlp error:':<25}{yt_dlp_output.stderr}\033[0m")
             return
 
         print(f"{'Title:':<25}{title}")
@@ -294,7 +305,9 @@ def add_to_queue(video_id):
 
             try:
                 # Notify the web client the queue is populated
-                client.wfile.write((f"event: ensure_playback\ndata:\n\n").encode("utf-8"))
+                client.wfile.write(
+                    (f"event: ensure_playback\ndata:\n\n").encode("utf-8")
+                )
                 client.wfile.flush()
             except (BrokenPipeError, ConnectionResetError, OSError):
                 # If the connection is broken, clear the web client
@@ -305,7 +318,7 @@ def add_to_queue(video_id):
 
 def play_next():
     global current_video
-    global skip_voting_open
+    global voting_open
     global sse_client
 
     with radio_lock:
@@ -315,7 +328,7 @@ def play_next():
             return
 
         if queue_file.stat().st_size == 0:
-            skip_voting_open = False
+            voting_open = False
             current_video = None
             return
 
@@ -332,28 +345,25 @@ def play_next():
 
     print(f"\033[33m{'Now playing:':<25}{title}\033[0m")
 
+    clean_title = title
     for pattern, replacement in replacements:
-        clean_title = pattern.sub(replacement, title)
+        clean_title = pattern.sub(replacement, clean_title)
+
+    if random.randint(0, 99) < interlude_chance:
+        play_sound("interlude")
 
     text_message_prefix = "[RADIO] "
     text_message_suffix = f" ({video_id})"
     truncated_title_length = 127 - len(text_message_prefix) - len(text_message_suffix)
     truncated_title = " ".join(clean_title.split())[:truncated_title_length]
 
-    with open(text_message_file, "w") as file:
-        file.write(
-            f"say \"{text_message_prefix}{truncated_title}{text_message_suffix}\";"
-            "echo \"text_message_sent\"\n"
-        )
-
-    play_sound("interlude")
-    play_sound("elevator bell")
+    send_text_message(f"{text_message_prefix}{truncated_title}{text_message_suffix}")
 
     with radio_lock:
-        # Clear skip votes
-        skip_vote_list.clear()
+        # Clear votes
+        vote_list.clear()
 
-        skip_voting_open = True
+        voting_open = True
 
     try:
         # Send the video ID to the web client
@@ -370,7 +380,7 @@ def play_next():
 
 def skip_current():
     global current_video
-    global skip_voting_open
+    global voting_open
     global sse_client
 
     with radio_lock:
@@ -404,11 +414,11 @@ Thread(
 ).start()
 
 print(
-    f"\033[35m{'Web server':<25}Listening at http://127.0.0.1:{webserver_port}'\033[0m"
+    f"\033[35m{'Web server:':<25}Listening at http://127.0.0.1:{webserver_port}'\033[0m"
 )
 
 
-with open(console_log, "r") as log:
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -422,38 +432,50 @@ with open(console_log, "r") as log:
         # Remove the trailing newline
         line = line.rstrip("\n")
 
-        # Search for lines containing the text-message-sent signal
-        if re_message_sent_signal.search(line):
-            # Clear the old text message
-            open(text_message_file, "w").close()
+        # Search for lines containing a message
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
 
-        # Search for lines containing the command
-        if not re_command.search(line):
-            continue
+        # Extract the username and the message
+        username = matched_line.group(3)
+        message = matched_line.group(4)
+
         # Remove messages from blacklisted players
-        if re_blacklisted_names.search(line):
+        if re_blacklisted_users.search(username):
             continue
+
         # Keep messages only from whitelisted players
-        if not re_whitelisted_names.search(line):
+        if not re_whitelisted_users.search(username):
             continue
+
+        # Clear the old text message
+        if re_text_message_signal.search(message) or (
+            last_text_message_time and (time.time() - last_text_message_time > 5)
+        ):
+            clear_text_message()
+            continue
+
         # Remove messages with blacklisted words
-        if re_blacklisted_words.search(line):
+        if re_blacklisted_words.search(message):
             continue
 
-        # Extract video urls, usernames, commands and command input
-        matched_command = re_command.match(line)
-        username = matched_command.group(3)
-        selected_command = matched_command.group(4)
-        video_url = matched_command.group(5)
+        # Search for messages containing a command
+        matched_command = re_command.match(message)
+        if not matched_command:
+            continue
 
-        if selected_command == "queue" and video_url:
+        # Extract the command and its argument
+        command_name = matched_command.group(1).lower()
+        command_text = matched_command.group(2)
+
+        if command_name == "!queue" and command_text:
             # Check if the video ID is valid
-            video_url_match = re_url.match(video_url)
-            if not video_url_match:
+            matched_video_url = re_url.match(command_text)
+            if not matched_video_url:
                 continue
 
-            video_id = video_url_match.group(4)
+            video_id = matched_video_url.group(4)
 
             Thread(
                 target=add_to_queue,
@@ -461,12 +483,12 @@ with open(console_log, "r") as log:
                 daemon=True,
             ).start()
         # Vote to skip the currently playing video
-        elif selected_command == "skip" and skip_voting_open:
+        elif command_name == "!skip" and voting_open:
             # Check if the user has not voted yet
-            if username not in skip_vote_list:
-                skip_vote_list.add(username)
+            if username not in vote_list:
+                vote_list.add(username)
 
-                remaining_vote_count = required_vote_count - len(skip_vote_list)
+                remaining_vote_count = required_vote_count - len(vote_list)
 
                 print(
                     f"\033[34m{'Voted to skip:':<25}"
@@ -474,11 +496,7 @@ with open(console_log, "r") as log:
                     f"{username}\033[0m"
                 )
 
-                with open(text_message_file, "w") as file:
-                    file.write(
-                        f"say \"[RADIO] Remaining votes: {remaining_vote_count}\";"
-                        "echo \"text_message_sent\"\n"
-                    )
+                send_text_message(f"[RADIO] Remaining votes: {remaining_vote_count}")
 
                 if remaining_vote_count > 0:
                     Thread(
@@ -490,6 +508,6 @@ with open(console_log, "r") as log:
                 else:
                     print(f"\033[36m{'Queue:':<25}{'Skipping the video'}\033[0m")
 
-                    open(text_message_file, "w").close()
+                    clear_text_message()
 
                     skip_current()

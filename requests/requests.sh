@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -9,34 +9,61 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
-blacklisted_names=""
+# Example: "John|pablo\.gonzales\.2007|Engineer Gaming"
+blacklisted_users=""
 
 # Alternatively, a whitelist:
-whitelisted_names=""
+whitelisted_users=""
 
 # Word blacklist:
-# Example: "dQw4w9WgXcQ\|dwDns8x3Jb4\|ZZ5LpwO-An4"
+# Example: "dQw4w9WgXcQ|dwDns8x3Jb4|ZZ5LpwO-An4"
 blacklisted_words=""
 
 
+re_line="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *![rR][eE][qQ][uU][eE][sS][tT] +(.+)"
+re_url="(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+)"
+re_blacklisted_users="${blacklisted_users:-$^}"
+re_whitelisted_users="${whitelisted_users:-.*}"
+re_blacklisted_words="${blacklisted_words:-$^}"
+
+
 while IFS= read -r line; do
-    # Extract usernames and messages
-    re_username_message="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  ![a-zA-Z0-9_]+ (.+)"
-    if [[ "$line" =~ $re_username_message ]]; then
+    # Search for lines containing a command
+    if [[ "$line" =~ $re_line ]]; then
+        # Extract the username and the video URL
         username="${BASH_REMATCH[3]}"
         message="${BASH_REMATCH[4]}"
+    else
+        continue
     fi
+
+    # Remove messages from blacklisted players
+    if [[ "$username" =~ $re_blacklisted_users ]]; then
+        continue
+    fi
+
+    # Keep messages only from whitelisted players
+    if [[ ! "$username" =~ $re_whitelisted_users ]]; then
+        continue
+    fi
+
+    # Remove messages with blacklisted words
+    shopt -s nocasematch
+    if [[ "$message" =~ $re_blacklisted_words ]]; then
+        continue
+    fi
+    shopt -u nocasematch
 
     title=""
     channel=""
-    if [[ "$line" =~ (https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]+) ]]; then
-        video_id="${BASH_REMATCH[-1]}"
+    # Check if the video ID is valid
+    if [[ "$message" =~ $re_url ]]; then
+        video_id="${BASH_REMATCH[4]}"
 
         metadata=$(
             yt-dlp \
                 --js-runtimes "deno" \
-                --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36" \
+                --add-headers "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36" \
                 --limit-rate 500K \
                 --skip-download \
                 --no-warnings \
@@ -50,15 +77,6 @@ while IFS= read -r line; do
     fi
 
     printf "%s\t%s\t%s\t%s\n" "$username" "$message" "$title" "$channel"
-done < <(
-    # Continuously read the last line of the log as it is updated
-    stdbuf -oL tail -fn 1 "$console_log" |
-    # Search for lines containing the command
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !request " |
-    # Remove messages from blacklisted players
-    grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
-    # Keep messages only from whitelisted players
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  !" |
-    # Remove messages with blacklisted words
-    grep --line-buffered -v "${blacklisted_words:-$^}"
-)
+# Continuously read the last line of the log as it is updated
+done < <(tail -fn 1 "$console_log")
+

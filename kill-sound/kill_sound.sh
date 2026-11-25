@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 shopt -s nullglob
 
@@ -8,13 +8,12 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Target list:
 declare -A user_directories=(
     # Example: ["John"]="john"
-    # Example: ["pablo\.gonzales\.2007"]="pablo"
+    # Example: ["pablo.gonzales.2007"]="pablo"
     # Example: ["Engineer Gaming"]="engineer gaming"
 )
 
 # Kill sounds directory
 sound_dir="${script_dir}/sounds"
-
 
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
@@ -22,7 +21,21 @@ sound_dir="${script_dir}/sounds"
 console_log="${script_dir}/console.log"
 
 
-while IFS= read -r username; do
+for username in "${!user_directories[@]}"; do
+    mkdir -p "$sound_dir/${user_directories[$username]}"
+done
+
+re_line="^((.+) (suicided|died)|.+ killed (.+) with .+)\.( \(crit\))?$"
+
+
+while IFS= read -r line; do
+    # Extract usernames
+    if [[ "$line" =~ $re_line ]]; then
+        username="${BASH_REMATCH[2]:-${BASH_REMATCH[4]}}"
+    else
+        continue
+    fi
+
     if [[ ! -v user_directories["$username"] ]]; then
         continue
     fi
@@ -33,17 +46,10 @@ while IFS= read -r username; do
         "$sound_dir/${user_directories[$username]}/"* [0-9]*.*
     )
 
-    if [[ ${#matched_files[@]} -gt 0 ]]; then
+    if (( ${#matched_files[@]} )); then
         selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
 
         paplay --device=virtual_speaker --client-name=soundboard "$selected_file" >/dev/null 2>&1 &
     fi
-done < <(
-    # Continuously read the last line of the log as it is updated
-    stdbuf -oL tail -fn 1 "$console_log" |
-    # Search for lines containing the command
-    grep --line-buffered "^\(.\+ \(suicided\|died\)\|.\+ killed .\+ with .\+\)\.\( (crit)\)\?$" |
-    # Extract the username
-    stdbuf -o0 sed -E 's/^(.+) (suicided|died)\.( \(crit\))?$/\1/' |
-    stdbuf -o0 sed -E 's/^.+ killed (.+) with .+\.( \(crit\))?$/\1/'
-)
+# Continuously read the last line of the log as it is updated
+done < <(tail -fn 1 "$console_log")

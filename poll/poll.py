@@ -1,11 +1,11 @@
-import json
+#!/usr/bin/env python3
+
 import re
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 from threading import Thread
 
@@ -13,11 +13,7 @@ script_dir = Path(__file__).resolve().parent
 
 
 def exit_cleanup(signum, frame):
-    for file in Path(tempfile.gettempdir()).glob("dectalk_voice-*.wav"):
-        try:
-            file.unlink()
-        except FileNotFoundError:
-            pass
+    open(text_message_file, "w").close()
 
     sys.exit(0)
 
@@ -36,18 +32,21 @@ time_limit = 30
 # Poll sounds directory
 sound_dir = script_dir / "sounds"
 
-
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log = script_dir / "console.log"
 
+# Location of the file storing generated text chat messages.
+# This file should be in the same directory as TF2's autoexec.cfg
+text_message_file = script_dir / "message.cfg"
+
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-blacklisted_names = ""
+blacklisted_users = ""
 
 # Alternatively, a whitelist:
-whitelisted_names = ""
+whitelisted_users = ""
 
 # Word blacklist:
 # Example: "nominate|rtv|nextmap"
@@ -55,28 +54,26 @@ blacklisted_words = ""
 
 # Whitelist for starting a poll:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-whitelisted_poll_names = ""
+whitelisted_poll_users = ""
 
 
-piper_server = "http://127.0.0.1:5000/synthesize"
+open(text_message_file, "w").close()
+
 poll_thread = None
 poll_open = False
-
 vote_list = {}
+last_text_message_time = None
 
-re_command = re.compile(
-    r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !(startpoll|poll) (.+)"
-)
-re_blacklisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !"
-)
-re_whitelisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !"
-)
-re_whitelisted_poll_names = re.compile(rf"{whitelisted_poll_names or '.*'}")
+re_line = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.+)")
+re_command = re.compile(r"^((?i:!poll|yes|no)) *(.+)?")
+re_text_message_signal = re.compile(r"^\[ ?POLL\]")
+re_vote=re.compile(r"^yes|no$")
+re_blacklisted_users = re.compile(rf"{blacklisted_users or '$^'}")
+re_whitelisted_users = re.compile(rf"{whitelisted_users or '.*'}")
+re_whitelisted_poll_users = re.compile(rf"{whitelisted_poll_users or '.*'}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
-re_vote = re.compile(r"^[yn][a-z0-9_-]*", re.IGNORECASE)
+re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-_=+[\]{};:'\",.<>/?\\|`~]")
 
 replacements = [
     (re.compile(r"btw", re.IGNORECASE), "by the way"),
@@ -85,11 +82,22 @@ replacements = [
 ]
 
 
-def replace_patterns(text):
-    for pattern, replacement in replacements:
-        text = pattern.sub(replacement, text)
+def send_text_message(text):
+    global last_text_message_time
 
-    return text
+    text_message = " ".join(text.split())[:127]
+
+    with open(text_message_file, "w") as file:
+        file.write(f'say "{text_message}"\n')
+
+    last_text_message_time = time.time()
+
+
+def clear_text_message():
+    global last_text_message_time
+
+    open(text_message_file, "w").close()
+    last_text_message_time = None
 
 
 def play_sound(sound):
@@ -105,49 +113,11 @@ def play_sound(sound):
     )
 
 
-def speak_text(text):
-    if not text:
-        return
-
-    with tempfile.NamedTemporaryFile(
-        prefix="piper_voice-", suffix=".wav", delete=False
-    ) as file:
-        audio_file = file.name
-
-    try:
-        data = {"text": text, "voice": "en_US-joe-medium", "length_scale": "1"}
-
-        post_request = urllib.request.Request(
-            piper_server,
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        with urllib.request.urlopen(post_request) as response, open(
-            audio_file, "wb"
-        ) as file:
-            file.write(response.read())
-
-        subprocess.run(
-            [
-                "paplay",
-                "--device=virtual_speaker",
-                "--client-name=piper",
-                audio_file,
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    finally:
-        Path(audio_file).unlink(missing_ok=True)
-
-
 def start_poll(question):
     global poll_open
 
     play_sound("start")
-    speak_text(f"A poll has started: {question}")
+    send_text_message(f"[POLL] {question}")
 
     poll_open = True
 
@@ -161,25 +131,25 @@ def start_poll(question):
     poll_open = False
 
     yes_count = sum(vote == "yes" for vote in vote_list.values())
-    no_count = sum(vote == "no" for vote in vote_list.values())
+    total_count = len(vote_list)
 
-    if len(vote_list) == 0:
+    if total_count == 0:
         play_sound("failure")
-        speak_text("The poll has ended: nobody has voted.")
-    elif yes_count > no_count:
+        send_text_message("[POLL] Nobody has voted.")
+    elif yes_count * 2 > total_count:
         play_sound("success")
-        speak_text("The poll has ended: the majority has voted 'yes'.")
-    elif yes_count == no_count:
+        send_text_message(f"[POLL] The majority has voted 'yes' ({yes_count}/{total_count})")
+    elif yes_count * 2 == total_count:
         play_sound("failure")
-        speak_text("The poll has ended in a draw.")
+        send_text_message(f"[POLL] The poll has ended in a draw ({yes_count}/{total_count})")
     else:
         play_sound("failure")
-        speak_text("The poll has ended: the majority has voted 'no'.")
+        send_text_message(f"[POLL] The majority has voted 'no' ({yes_count}/{total_count})")
 
     vote_list.clear()
 
 
-with open(console_log, "r") as log:
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -192,52 +162,79 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
-        # Search for lines containing the command
-        if not re_command.search(line):
+
+        # Search for lines containing a message
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
+
+        # Extract the username and the message
+        username = matched_line.group(3)
+        message = matched_line.group(4)
+
         # Remove messages from blacklisted players
-        if re_blacklisted_names.search(line):
+        if re_blacklisted_users.search(username):
             continue
+
         # Keep messages only from whitelisted players
-        if not re_whitelisted_names.search(line):
+        if not re_whitelisted_users.search(username):
             continue
-        # Replace certain patterns
-        line = replace_patterns(line)
+
+        # Clear the old text message
+        if re_text_message_signal.search(message) or (
+            last_text_message_time and (time.time() - last_text_message_time > 5)
+        ):
+            clear_text_message()
+            continue
+
         # Remove messages with blacklisted words
-        if re_blacklisted_words.search(line):
-            continue
-        # Remove messages with excessive repetition
-        if re_repetition.search(line):
+        if re_blacklisted_words.search(message):
             continue
 
-        # Extract usernames, commands and command input
-        matched_command = re_command.match(line)
-        command_input = matched_command.group(5)
+        # Search for messages containing a command
+        matched_command = re_command.match(message)
+        if not matched_command:
+            continue
 
-        selected_command = matched_command.group(4)
-        if selected_command == "startpoll" and re_whitelisted_poll_names.search(line):
+        # Extract the command
+        command_name = matched_command.group(1).lower()
+        command_text = matched_command.group(2)
+        matched_vote = re_vote.match(command_name)
+
+        if command_name == "!poll" and re_whitelisted_poll_users.search(line):
             # Check if the poll is running
             if poll_thread is None or not poll_thread.is_alive():
+                # Replace certain patterns
+                for pattern, replacement in replacements:
+                    command_text = pattern.sub(replacement, command_text)
+
+                # Remove messages with excessive repetition
+                if re_repetition.search(command_text):
+                    continue
+
+                # Remove non-ASCII and control characters
+                command_text = re_allowed_characters.sub("", command_text)
+
+                # Trim and normalize whitespace
+                command_text = " ".join(command_text.split())
+
+                if not command_text:
+                    continue
+
                 poll_thread = Thread(
-                    target=start_poll, args=(command_input,), daemon=True
+                    target=start_poll, args=(command_text,), daemon=True
                 )
                 poll_thread.start()
-        elif selected_command == "poll":
+        elif matched_vote:
+            vote = matched_vote.group(0)
+
             # Check if the poll is open
             if poll_thread is not None and poll_thread.is_alive() and poll_open:
-                username = matched_command.group(3)
-
                 # Check if the user has not voted yet
                 if username not in vote_list:
-                    if re_vote.match(command_input):
-                        if command_input.lower().startswith("y"):
-                            vote = "yes"
-                        elif command_input.lower().startswith("n"):
-                            vote = "no"
-
-                        vote_list[username] = vote
-                        Thread(
-                            target=play_sound,
-                            args=(vote,),
-                            daemon=True,
-                        ).start()
+                    vote_list[username] = command_name
+                    Thread(
+                        target=play_sound,
+                        args=(command_name,),
+                        daemon=True,
+                    ).start()

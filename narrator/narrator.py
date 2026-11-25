@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import random
 import re
@@ -28,15 +30,7 @@ signal.signal(signal.SIGINT, exit_cleanup)
 signal.signal(signal.SIGTERM, exit_cleanup)
 
 
-sound_dir = script_dir / "sounds"
-piper_server = "http://127.0.0.1:5000/synthesize"
-username_voices_file = script_dir / "username_voices.txt"
-
-if not username_voices_file.exists():
-    username_voices_file.touch()
-
-
-# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
+# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-joe-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples
 voices = [
     "en_GB-alan-medium",
@@ -52,7 +46,6 @@ voices = [
     "en_US-lessac-high",  # female
 ]
 
-
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
@@ -60,31 +53,30 @@ console_log = script_dir / "console.log"
 
 # User blacklist:
 # Example: "John|pablo.gonzales.2007|Engineer Gaming"
-blacklisted_names = ""
+blacklisted_users = ""
 
 # Alternatively, a whitelist:
-whitelisted_names = ""
+whitelisted_users = ""
 
 # Word blacklist:
 # Example: "nominate|rtv|nextmap"
 blacklisted_words = ""
 
 
+username_voices_file = script_dir / "username_voices.txt"
+
+username_voices_file.touch()
+
+sound_dir = script_dir / "sounds"
+piper_server = "http://127.0.0.1:5000/synthesize"
 previous_line = None
 
-# re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  !pip (.+)")
-re_command = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  (.+)")
-# re_blacklisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  !")
-re_blacklisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({blacklisted_names or '$^'}) :  "
-)
-# re_whitelisted_names = re.compile(rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  !")
-re_whitelisted_names = re.compile(
-    rf"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?({whitelisted_names or '.*'}) :  "
-)
+re_line = re.compile(r"^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.+)")
+re_blacklisted_users = re.compile(rf"{blacklisted_users or '$^'}")
+re_whitelisted_users = re.compile(rf"{whitelisted_users or '.*'}")
 re_blacklisted_words = re.compile(rf"{blacklisted_words or '$^'}", re.IGNORECASE)
 re_repetition = re.compile(r"(.{2,})\1{5,}")
-re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
+re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-_=+[\]{};:'\",.<>/?\\|`~]")
 
 replacements = [
     (re.compile(r"btw", re.IGNORECASE), "by the way"),
@@ -93,14 +85,7 @@ replacements = [
 ]
 
 
-def replace_patterns(text):
-    for pattern, replacement in replacements:
-        text = pattern.sub(replacement, text)
-
-    return text
-
-
-with open(console_log, "r") as log:
+with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
     # Jump to the end of the file
     log.seek(0, 2)
 
@@ -113,41 +98,55 @@ with open(console_log, "r") as log:
 
         # Remove the trailing newline
         line = line.rstrip("\n")
-        # Search for lines containing the command
-        if not re_command.search(line):
+
+        # Search for lines containing a message
+        matched_line = re_line.match(line)
+        if not matched_line:
             continue
+
+        # Extract the username and the message
+        username = matched_line.group(3)
+        message = matched_line.group(4)
+
         # Remove messages from blacklisted players
-        if re_blacklisted_names.search(line):
+        if re_blacklisted_users.search(username):
             continue
+
         # Keep messages only from whitelisted players
-        if not re_whitelisted_names.search(line):
+        if not re_whitelisted_users.search(username):
             continue
-        # Replace certain patterns
-        line = replace_patterns(line)
-        # Remove messages with blacklisted words
-        if re_blacklisted_words.search(line):
-            continue
-        # Remove messages with excessive repetition
-        if re_repetition.search(line):
-            continue
+
         # Remove duplicate messages
         # if line == previous_line:
         #    continue
         # previous_line = line
 
-        # Extract usernames and messages
-        matched_command = re_command.match(line)
-        username = matched_command.group(3)
-        text = matched_command.group(4)
-
-        # Remove non-ASCII and control characters
-        text = re_allowed_characters.sub("", text)
-
-        if not text:
+        # Remove messages with blacklisted words
+        if re_blacklisted_words.search(message):
             continue
 
-        matched_files = list(Path(sound_dir).glob(f"{line}.*")) + list(
-            Path(sound_dir).glob(f"{line} [0-9]*.*")
+        # Replace certain patterns
+        for pattern, replacement in replacements:
+            message = pattern.sub(replacement, message)
+
+        # Remove messages with excessive repetition
+        if re_repetition.search(message):
+            continue
+
+        # Remove non-ASCII and control characters
+        message = re_allowed_characters.sub("", message)
+
+        if not message:
+            continue
+
+        # Convert the message to lowercase
+        sound_file = message.lower()
+
+        # Trim and normalize whitespace
+        sound_file = " ".join(sound_file.split())
+
+        matched_files = list(Path(sound_dir).glob(f"{sound_file}.*")) + list(
+            Path(sound_dir).glob(f"{sound_file} [0-9]*.*")
         )
 
         # Skip the message if a soundboard sound exists
@@ -207,7 +206,7 @@ with open(console_log, "r") as log:
 
                 username, voice, length_scale, speaker = username_voice.split("\t")
 
-            data = {"text": text, "voice": voice, "length_scale": length_scale}
+            data = {"text": message, "voice": voice, "length_scale": length_scale}
 
             if speaker:
                 data["speaker"] = speaker

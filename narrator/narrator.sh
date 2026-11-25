@@ -1,18 +1,11 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 shopt -s nullglob
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-sound_dir="${script_dir}/sounds"
-piper_server="http://127.0.0.1:5000/synthesize"
-username_voices_file="${script_dir}/username_voices.txt"
 
-if [[ ! -f "$username_voices_file" ]]; then
-    touch "$username_voices_file"
-fi
-
-# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
+# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-joe-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples
 voices=(
     "en_GB-alan-medium"
@@ -28,45 +21,103 @@ voices=(
     "en_US-lessac-high"         # female
 )
 
-
 # Add '-condebug' to TF2's launch parameters.
 # Alternatively, add "con_logfile <logfile location>" to TF2's autoexec.cfg,
 # e.g. "con_logfile console.log". This will create a console.log file in the tf/ directory
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
-blacklisted_names=""
+# Example: "John|pablo\.gonzales\.2007|Engineer Gaming"
+blacklisted_users=""
 
 # Alternatively, a whitelist:
-whitelisted_names=""
+whitelisted_users=""
 
 # Word blacklist:
-# Example: "nominate\|rtv\|nextmap"
+# Example: "nominate|rtv|nextmap"
 blacklisted_words=""
 
 
+username_voices_file="${script_dir}/username_voices.txt"
+
+touch "$username_voices_file"
+
+sound_dir="${script_dir}/sounds"
+piper_server="http://127.0.0.1:5000/synthesize"
+previous_line=""
+
+re_line="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *(.+)"
+re_blacklisted_users="${blacklisted_users:-$^}"
+re_whitelisted_users="${whitelisted_users:-.*}"
+re_blacklisted_words="${blacklisted_words:-$^}"
+re_repetition="(.{2,})\1{5,}"
+
+replacements=(
+    -e "s/btw/by the way/gI"
+    -e 's/wtf/what the fuck/gI'
+    -e "s/idk/i don't know/gI"
+)
+
+
 while IFS= read -r line; do
-    # Extract usernames and messages
-    re_username_message="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  (.+)"
-    #re_username_message="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :  ![a-zA-Z0-9_]+ (.+)"
-    if [[ "$line" =~ $re_username_message ]]; then
+    # Search for lines containing a message
+    if [[ "$line" =~ $re_line ]]; then
+        # Extract the username and the message
         username="${BASH_REMATCH[3]}"
         message="${BASH_REMATCH[4]}"
+    else
+        continue
+    fi
+
+    # Remove messages from blacklisted players
+    if [[ "$username" =~ $re_blacklisted_users ]]; then
+        continue
+    fi
+
+    # Keep messages only from whitelisted players
+    if [[ ! "$username" =~ $re_whitelisted_users ]]; then
+        continue
+    fi
+
+    # Remove duplicate messages
+#     if [[ "$line" == "$previous_line" ]]; then
+#         continue
+#     fi
+#     previous_line="$line"
+
+    # Remove messages with blacklisted words
+    shopt -s nocasematch
+    if [[ "$message" =~ $re_blacklisted_words ]]; then
+        continue
+    fi
+    shopt -u nocasematch
+
+    # Replace certain patterns
+    message="$(sed "${replacements[@]}" <<< "$message")"
+
+    # Remove messages with excessive repetition
+    if grep -Pq "$re_repetition" <<< "$message"; then
+        continue
     fi
 
     # Remove non-ASCII and control characters
-    text="$(tr -cd '[:alnum:][:space:][:punct:]' <<< "$text")"
+    message="$(LC_ALL=C tr -cd '[:alnum:][:space:][:punct:]' <<< "$message")"
 
-    [[ -z "$text" ]] && continue
+    [[ -z "$message" ]] && continue
+
+    # Convert the message to lowercase
+    sound_file="${message,,}"
+
+    # Trim and normalize whitespace
+    sound_file="$(sed 's/^ \+//g; s/ \+$//g; s/ \+/ /g;' <<< "$sound_file")"
 
     matched_files=(
-        "$sound_dir/${text,,}".*
-        "$sound_dir/${text,,} "[0-9]*.*
+        "$sound_dir/${sound_file}".*
+        "$sound_dir/${sound_file} "[0-9]*.*
     )
 
     # Skip the message if a soundboard sound exists
-    if [[ ${#matched_files[@]} -gt 0 ]]; then
+    if (( ${#matched_files[@]} )); then
         continue
     fi
 
@@ -111,7 +162,7 @@ while IFS= read -r line; do
         data="$(
 cat <<EOF
 {
-    "text": "$text",
+    "text": "$message",
     "voice": "$voice",
     "speaker": "$speaker",
     "length_scale": "$length_scale"
@@ -122,7 +173,7 @@ EOF
         data="$(
 cat <<EOF
 {
-    "text": "$text",
+    "text": "$message",
     "voice": "$voice",
     "length_scale": "$length_scale"
 }
@@ -136,28 +187,8 @@ EOF
     (
         #paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
         paplay --client-name=piper "$audio_file" >/dev/null 2>&1
+
         rm -f "$audio_file"
     ) &
-done < <(
-    # Continuously read the last line of the log as it is updated
-    stdbuf -oL tail -fn 1 "$console_log" |
-    # Search for lines containing the command
-    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !pip" |
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  " |
-    # Remove messages from blacklisted players
-    #grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
-    grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  " |
-    # Keep messages only from whitelisted players
-    #grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  !" |
-    grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  " |
-    # Replace certain patterns
-    stdbuf -o0 sed  -e 's/btw/by the way/gI' \
-                    -e 's/wtf/what the fuck/gI' \
-                    -e 's/idk/i don'\''t know/gI' |
-    # Remove messages with blacklisted words
-    grep --line-buffered -iv "${blacklisted_words:-$^}" |
-    # Remove messages with excessive repetition
-    grep --line-buffered -Pv '(.{2,})\1{5,}'
-    # Remove duplicate messages
-    #| stdbuf -o0 uniq
-)
+# Continuously read the last line of the log as it is updated
+done < <(tail -fn 1 "$console_log")
