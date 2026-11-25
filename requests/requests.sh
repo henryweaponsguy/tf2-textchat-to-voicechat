@@ -56,7 +56,7 @@ while IFS= read -r line; do
 
     title=""
     channel=""
-    # Check if the video ID is valid
+    # Check if the video URL is valid
     if [[ "$message" =~ $re_url ]]; then
         video_id="${BASH_REMATCH[4]}"
 

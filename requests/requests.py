@@ -79,7 +79,7 @@ with open(console_log, "r", encoding="utf-8", errors="ignore") as log:
 
         title = ""
         channel = ""
-        # Check if the video ID is valid
+        # Check if the video URL is valid
         matched_video_url = re_url.match(message)
         if matched_video_url:
             video_id = matched_video_url.group(4)
