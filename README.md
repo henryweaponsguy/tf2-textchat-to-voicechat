@@ -6,7 +6,7 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 ## Available scripts
 
-`fortune` - reads a random fortune cookie fortune (from the `fortunes.txt` file) aloud[^2]
+`fortune` - reads a random fortune cookie fortune (from the `fortunes.txt` file) aloud[^4]
 
 `kill-announcer` - reads a custom message aloud when a target player dies[^2]
 
@@ -16,7 +16,7 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 `notifications` - plays a notification sound when a player sends a text message[^1]
 
-`poll` - allows creating simple 'yes/no' polls[^1] [^2]
+`poll` - allows creating simple 'yes/no' polls[^1] [^4]
 
 `radio` - allows queuing YouTube videos to be downloaded and played next. Allows voting to skip the currently playing video (uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading videos and [ffmpeg](https://ffmpeg.org) for audio normalization)[^1] [^4]
 
@@ -24,7 +24,7 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 `requests` - logs requests to console for easier tracking (e.g. for music requests). Converts YouTube URLs to titles automatically
 
-`sentence-mixer` - converts text messages to speech using files from the `voices/` directory. The audio files need to have the same parameters (channel count, codec, sample rate), otherwise the output audio will come out corrupted[^1]
+`sentence-mixer` - converts text messages to speech using files from the `voices/` directory (the ffmpeg version requires audio files to have the same parameters (channel count, codec, sample rate), otherwise the output audio will come out corrupted)[^1]
 
 `soundboard` - converts valid text messages to sounds from the `sounds/` directory[^1]
 
@@ -64,7 +64,9 @@ Text chat/voice chat scripts for TF2 available in Python and Bash. Run the scrip
 
 Add `-condebug` to TF2's launch parameters. Alternatively, add `con_logfile <logfile location, e.g. console.log>` to TF2's `autoexec.cfg`
 
-Run TF2 at least once before starting a script/container so the `console.log` file is created
+Start TF2 at least once before starting a script/container so the `console.log` file is created
+
+Create a [virtual cable](#helpful-scripts)
 
 #### Bubblewrap sandbox
 
@@ -76,9 +78,7 @@ Update Python dependencies: `./run.sh update`
 
 Start a container: `export UID=$(id -u); docker compose up -d`
 
-Run a script in the container: `docker exec -it <container name, e.g. tf2-soundboard> python '/app/<script name, e.g. soundboard.py>'`
-
-Or to run a Bash script: `docker exec -it <container name, e.g. tf2-soundboard> '/app/<script name, e.g. soundboard.sh>'`
+Run a script in the container: `docker exec -it <container name, e.g. tf2-soundboard> '/app/<script name, e.g. soundboard.py>'`
 
 Stop the container: `docker compose down`
 
@@ -90,16 +90,18 @@ Create a `message.cfg` file next to TF2's `autoexec.cfg` file and add this to TF
 
 ```
 alias message_loop_key start_message_loop
-alias start_message_loop "echo ==================== MESSAGES ENABLED ====================;echo text_message_sent;alias message_loop_key stop_message_loop;alias redirect_message_loop run_message_loop;run_message_loop"
-alias stop_message_loop "echo ==================== MESSAGES DISABLED ====================;alias redirect_message_loop;alias message_loop_key start_message_loop"
+alias start_message_loop "echo ==================== MESSAGES ENABLED ====================;alias message_loop_key stop_message_loop;alias redirect_message_loop run_message_loop;run_message_loop"
+alias stop_message_loop "echo ==================== MESSAGES DISABLED ===================;alias redirect_message_loop;alias message_loop_key start_message_loop"
 alias message_loop_command "exec overrides/message.cfg"
-alias run_message_loop "message_loop_command;wait 500;redirect_message_loop"
+alias run_message_loop "message_loop_command;wait 1000;redirect_message_loop"
 bind "p" message_loop_key
 ```
 
 If `message.cfg` is not in `tf/cfg/overrides/`, adjust the script above and the paths in `run.sh`/`docker-compose.yml` to the file's actual location
 
-The actual duration of the `wait` command depends on the server's tickrate and the client's framerate. Check [this](https://wiki.teamfortress.com/wiki/Scripting#wait) for the formula
+The actual duration of the `wait` command depends on the server's tickrate and the client's current framerate. For optimal results, the script should wait around 2 seconds between messages
+
+To calculate the appropriate `wait` value use this formula: `2 * (<fps_max> + 66)`
 
 ---
 

@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libwine:i386 \
     nginx \
     pulseaudio \
+    python3 \
     wine \
     wine32 \
     wine64 \

@@ -1,11 +1,18 @@
+#!/usr/bin/env python3
+
+import json
 import re
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
+from threading import Thread
 
 script_dir = Path(__file__).resolve().parent
+
 
 # Exit cleanly on CTRL+C and system shutdown
 signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
@@ -15,24 +22,12 @@ signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 sound_dir = script_dir / "sounds"
 
 
-timer_running_state_file = Path(tempfile.gettempdir()) / "timer.running"
-
-word_list_file = script_dir / "word_list.txt"
-
-if not word_list_file.exists():
-    word_list_file.touch()
-
 word_list = []
 
 re_numbers = re.compile(rf"^[0-9]+$")
 
 
 def start_timer(duration):
-    if timer_running_state_file.exists():
-        return
-
-    timer_running_state_file.touch()
-
     if not re_numbers.match(duration):
         return
 
@@ -42,59 +37,38 @@ def start_timer(duration):
         return
 
     with tempfile.NamedTemporaryFile(
-        prefix="timer_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+        prefix="timer_word_list-", suffix=".m3u", delete=False
+    ) as file:
+        word_list_file = file.name
+
+    word_list.clear()
 
     try:
-        word_list.append(f"file '{sound_dir}/intro.wav'")
+        word_list.append(f"{sound_dir}/intro.wav")
 
-        for i in range(duration):
-            word_list.append(f"file '{sound_dir}/loop.wav'")
+        word_list.append("\n".join([f"{sound_dir}/loop.wav"] * duration))
 
-        word_list.append(f"file '{sound_dir}/spin.wav'")
-        word_list.append(f"file '{sound_dir}/explode.wav'")
+        word_list.append(f"{sound_dir}/spin.wav")
+        word_list.append(f"{sound_dir}/explode.wav")
 
         with open(word_list_file, "w") as file:
             file.writelines(f"{line}\n" for line in word_list)
 
         subprocess.run(
             [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-f",
-                "concat",
-                "-safe",
-                "0",
-                "-i",
-                str(word_list_file),
-                "-ar",
-                "22050",
-                "-ac",
-                "1",
-                "-c",
-                "copy",
-                "-y",
-                audio_file,
-            ]
-        )
-
-        subprocess.run(
-            ["paplay", "--device=virtual_speaker", "--client-name=timer", audio_file],
+                "mpv",
+                "--audio-device=pulse/virtual_speaker",
+                "--audio-client-name=sentence-mixer",
+                "--no-video",
+                "--gapless-audio=yes",
+                "--really-quiet",
+                word_list_file,
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-
-        word_list.clear()
     finally:
-        try:
-            Path(audio_file).unlink()
-            word_list_file.unlink()
-            timer_running_state_file.unlink()
-        except FileNotFoundError:
-            pass
+        Path(word_list_file).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

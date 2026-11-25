@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -24,6 +24,10 @@ done
 
 if ! python3 -m venv --help >/dev/null 2>&1; then
     missing_dependencies+=("python3-venv")
+fi
+
+if ! python3 -c "import pyaudio" >/dev/null 2>&1; then
+    missing_dependencies+=("python3-pyaudio")
 fi
 
 if (( ${#missing_dependencies[@]} )); then
@@ -118,13 +122,16 @@ runtime_options=(
 
     --proc /proc
     --dev /dev
+    --dev-bind /dev/snd /dev/snd
     --tmpfs /tmp
     --ro-bind /bin /bin
     --ro-bind /lib /lib
     --ro-bind /lib64 /lib64
     --ro-bind /usr /usr
+    --ro-bind /usr/sbin /sbin
     --ro-bind /etc/alternatives /etc/alternatives
     --ro-bind /etc/resolv.conf /etc/resolv.conf
+    --ro-bind /etc/ld.so.cache /etc/ld.so.cache
 
     --dir /app
     --chdir /app
@@ -142,7 +149,7 @@ runtime_options=(
 
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
-    export PATH="$venv/bin:$PATH"
+    source "$venv/bin/activate"
 
-    "$venv/bin/python3" "/app/speech_to_text.py"
-' _ "$venv_sandboxed"
+    "/app/speech_to_text.py" ${2:+"$2"}
+' _ "$venv_sandboxed" "${1:-}"

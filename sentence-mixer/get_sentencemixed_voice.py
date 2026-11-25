@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import random
 import re
 import signal
@@ -15,22 +17,6 @@ script_dir = Path(__file__).resolve().parent
 signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
-
-word_list_file = Path(tempfile.gettempdir(), "word_list.txt")
-voices_dir = script_dir / "voices"
-
-if not word_list_file.exists():
-    word_list_file.touch()
-
-word_list = []
-
-re_numbers = re.compile(rf"^-?[0-9]+(st|nd|rd|th)?$", re.IGNORECASE)
-
-suffix_patterns = [
-    re.compile(r"^(.*)(ing)$"),
-    re.compile(r"^(.*)(e[sd])$"),
-    re.compile(r"^(.*)([esd]|'s)$"),
-]
 
 default_dictionary = [
     (re.compile(r"_"), " "),
@@ -53,6 +39,19 @@ default_dictionary = [
     (re.compile(r"8"), " eight "),
     (re.compile(r"9"), " nine "),
 ]
+
+
+suffix_patterns = [
+    re.compile(r"^(.*)(ing)$"),
+    re.compile(r"^(.*)(e[sd])$"),
+    re.compile(r"^(.*)([esd]|'s)$"),
+]
+
+voices_dir = script_dir / "voices"
+word_list = []
+
+re_numbers = re.compile(rf"^-?[0-9]+(st|nd|rd|th)?$", re.IGNORECASE)
+
 
 # Import custom dictionaries
 custom_dictionaries = {}
@@ -95,7 +94,7 @@ def apply_dictionary(words, dictionary):
     return converted_words
 
 
-def mix_sentences(sound_dir, voice, text, audio_file):
+def mix_sentences(sound_dir, voice, text, word_list_file):
     word_list.clear()
 
     words = text.split()
@@ -129,7 +128,7 @@ def mix_sentences(sound_dir, voice, text, audio_file):
                 if matched_files:
                     selected_file = str(random.choice(matched_files))
 
-            word_list.append(f"file '{selected_file}'")
+            word_list.append(selected_file)
     else:
         words = apply_dictionary(words, default_dictionary)
 
@@ -188,34 +187,11 @@ def mix_sentences(sound_dir, voice, text, audio_file):
                 if matched_files:
                     selected_file = str(random.choice(matched_files))
 
-            word_list.append(f"file '{selected_file}'")
+            word_list.append(selected_file)
 
     if word_list:
         with open(word_list_file, "w") as file:
             file.writelines(f"{line}\n" for line in word_list)
-
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-f",
-                "concat",
-                "-safe",
-                "0",
-                "-i",
-                str(word_list_file),
-                "-ar",
-                "22050",
-                "-ac",
-                "1",
-                "-c",
-                "copy",
-                "-y",
-                audio_file,
-            ]
-        )
 
 
 def speak_text(line):
@@ -226,25 +202,28 @@ def speak_text(line):
         return
 
     with tempfile.NamedTemporaryFile(
-        prefix="sentencemixed_voice-", suffix=".wav", delete=False
-    ) as tmp:
-        audio_file = tmp.name
+        prefix="sentencemixed_word_list-", suffix=".m3u", delete=False
+    ) as file:
+        word_list_file = file.name
 
     try:
-        mix_sentences(sound_dir, voice, text, audio_file)
+        mix_sentences(sound_dir, voice, text, word_list_file)
 
         subprocess.run(
             [
-                "paplay",
-                "--device=virtual_speaker",
-                "--client-name=sentence-mixer",
-                audio_file,
+                "mpv",
+                "--audio-device=pulse/virtual_speaker",
+                "--audio-client-name=sentence-mixer",
+                "--no-video",
+                "--gapless-audio=yes",
+                "--really-quiet",
+                word_list_file,
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
     finally:
-        Path(audio_file).unlink(missing_ok=True)
+        Path(word_list_file).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

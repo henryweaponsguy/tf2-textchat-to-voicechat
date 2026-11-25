@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Declare associative arrays
 declare -A before_map
@@ -31,7 +31,7 @@ for path in "${!after_map[@]}"; do
         if [[ -f "$path" ]]; then
             cp --parents "$path" "$1"
         else
-            echo "Warning: File not found: $path"
+            echo "WARNING: File not found: $path"
         fi
     fi
 done

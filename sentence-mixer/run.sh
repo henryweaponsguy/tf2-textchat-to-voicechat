@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 system_dependencies=(
     "bwrap"
-    "ffmpeg"
-    "paplay"
+    "mpv"
     "python3"
 )
 
@@ -58,4 +57,4 @@ runtime_options=(
     --setenv PULSE_SERVER "unix:/run/user/${UID}/pulse/native"
 )
 
-exec bwrap "${runtime_options[@]}" "/usr/bin/python3" "/app/sentence_mixer.py"
+exec bwrap "${runtime_options[@]}" "/app/sentence_mixer.py"

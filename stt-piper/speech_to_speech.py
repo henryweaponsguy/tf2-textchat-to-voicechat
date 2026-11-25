@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import queue
 import random
@@ -35,12 +37,12 @@ signal.signal(signal.SIGTERM, exit_cleanup)
 if len(sys.argv) > 1:
     if sys.argv[1] == "-h":
         print("Usage:")
-        print(f"python3 {sys.argv[0]} -h                    # Show this message")
+        print(f"{sys.argv[0]} -h                    # Show this message")
         print(
-            f"python3 {sys.argv[0]}                       # Use the default input device"
+            f"{sys.argv[0]}                       # Use the default input device"
         )
         print(
-            f"python3 {sys.argv[0]} <audio device id>     # Use a specific input device"
+            f"{sys.argv[0]} <audio device id>     # Use a specific input device"
         )
 
         print("Audio device list:")
@@ -55,32 +57,25 @@ else:
 device_info = sd.query_devices(audio_device, "input")
 sample_rate = int(device_info["default_samplerate"])
 
-piper_server = "http://127.0.0.1:5000"
 
 # Download the speech recognition model here: https://alphacephei.com/vosk/models and extract the archive to 'models/'.
 # The 'vosk-model-small-en-us-*' model works the best for fast speech recognition and requires around 0.5 GB of RAM.
-# The 'vosk-model-en-us-*-gigaspeech' model is more accurate, but somewhat slower and requires 6+ GB of RAM.
+# The 'vosk-model-en-us-*-gigaspeech' model is more accurate, but somewhat slower and requires 6+ GB of RAM
 model = Model(str(script_dir / "models" / "vosk-model-en-us-gigaspeech"))
 # model = Model(str(script_dir / "models" / "vosk-model-small-en-us"))
 
-audio_queue = queue.Queue()
 
+piper_server = "http://127.0.0.1:5000/synthesize"
+audio_queue = queue.Queue()
 announcer_process = None
 
-re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-=+[\]{};:'\",.<>/?\\|`~]")
+re_allowed_characters = re.compile(r"[^A-Za-z0-9\s!@#$%^&*()\-_=+[\]{};:'\",.<>/?\\|`~]")
 
 replacements = [
     (re.compile(r"btw", re.IGNORECASE), "by the way"),
     (re.compile(r"wtf", re.IGNORECASE), "what the fuck"),
     (re.compile(r"idk", re.IGNORECASE), "i don't know"),
 ]
-
-
-def replace_patterns(text):
-    for pattern, replacement in replacements:
-        text = pattern.sub(replacement, text)
-
-    return text
 
 
 def callback(input_data, frames, time, status):
@@ -102,7 +97,7 @@ def speak_text(text):
     try:
         data = {
             "text": text,
-            "voice": "en_GB-alan-medium",
+            "voice": "en_US-joe-medium",
             "length_scale": 1,
             "speaker": "",
         }
@@ -152,19 +147,23 @@ with sd.RawInputStream(
         data = audio_queue.get()
         if rec.AcceptWaveform(data):
             result = json.loads(rec.Result())
+
             # Extract the message
-            line = result.get("text", "")
+            message = result.get("text", "")
+
             # Replace certain patterns
-            line = replace_patterns(line)
-            # Keep only letters, digits and spaces
-            line = re_allowed_characters.sub("", line)
-            # Skip empty messages
-            if not line:
+            for pattern, replacement in replacements:
+                message = pattern.sub(replacement, message)
+
+            # Remove non-ASCII and control characters
+            message = re_allowed_characters.sub("", message)
+
+            if not message:
                 continue
 
             # Stop the announcement early using a keyword
             if (
-                line == "stop"
+                message == "stop"
                 and announcer_process
                 and announcer_process.poll() is None
             ):
@@ -173,6 +172,6 @@ with sd.RawInputStream(
 
             Thread(
                 target=speak_text,
-                args=(line,),
+                args=(message,),
                 daemon=True,
             ).start()

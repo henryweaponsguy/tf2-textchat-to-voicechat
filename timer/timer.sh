@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -9,22 +9,45 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 console_log="${script_dir}/console.log"
 
 # User blacklist:
-# Example: "John\|pablo\.gonzales\.2007\|Engineer Gaming"
-blacklisted_names=""
+# Example: "John|pablo\.gonzales\.2007|Engineer Gaming"
+blacklisted_users=""
 
 # Alternatively, a whitelist:
-whitelisted_names=""
+whitelisted_users=""
 
 
+timer_pid_file="/tmp/timer.pid"
+
+re_line="^(\*DEAD\*|\*SPEC\*)?(\(TEAM\))? ?(.+) :   *![tT][iI][mM][eE][rR] +([0-9]+)"
+re_blacklisted_users="${blacklisted_users:-$^}"
+re_whitelisted_users="${whitelisted_users:-.*}"
+
+
+while IFS= read -r line; do
+    # Skip the incoming timer if there is one running already
+    timer_pid=$(cat "$timer_pid_file" 2>/dev/null)
+    if [[ -n "$timer_pid" ]]; then
+        continue
+    fi
+
+    # Search for lines containing a command
+    if [[ "$line" =~ $re_line ]]; then
+        # Extract the username and the duration
+        username="${BASH_REMATCH[3]}"
+        duration="${BASH_REMATCH[4]}"
+    fi
+
+    # Remove messages from blacklisted players
+    if [[ "$username" =~ $re_blacklisted_users ]]; then
+        continue
+    fi
+
+    # Keep messages only from whitelisted players
+    if [[ ! "$username" =~ $re_whitelisted_users ]]; then
+        continue
+    fi
+
+    # Start the timer
+    "${script_dir}/get_timer.sh" "$duration" &
 # Continuously read the last line of the log as it is updated
-stdbuf -oL tail -fn 1 "$console_log" |
-# Search for lines containing the command
-grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  !timer [0-9]\+" |
-# Remove messages from blacklisted players
-grep --line-buffered -v "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${blacklisted_names:-$^} :  !" |
-# Keep messages only from whitelisted players
-grep --line-buffered "^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?${whitelisted_names:-.*} :  !" |
-# Extract the duration
-stdbuf -o0 sed 's/^\(\*DEAD\*\|\*SPEC\*\)\?\((TEAM)\)\? \?.\+ :  ![a-zA-Z0-9_]\+ *//' |
-# Start the timer
-"${script_dir}/get_timer.sh"
+done < <(tail -fn 1 "$console_log")

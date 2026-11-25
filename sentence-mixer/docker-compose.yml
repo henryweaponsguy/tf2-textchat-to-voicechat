@@ -11,9 +11,9 @@ services:
       # otherwise Docker will create a directory with that name on the host
       - /run/user/${UID}/pulse/native:/run/user/${UID}/pulse/native:ro
       - ${HOME}/.steam/steam/steamapps/common/Team Fortress 2/tf/console.log:/app/console.log:ro
-      - ./sentence_mixer.py:/app/sentence_mixer.py:ro
-      - ./convert_numbers_to_words.py:/app/convert_numbers_to_words.py:ro
-      - ./get_sentencemixed_voice.py:/app/get_sentencemixed_voice.py:ro
+      - ./sentence_mixer.sh:/app/sentence_mixer.sh:ro
+      - ./convert_numbers_to_words.sh:/app/convert_numbers_to_words.sh:ro
+      - ./get_sentencemixed_voice.sh:/app/get_sentencemixed_voice.sh:ro
       - ./voices:/app/voices:ro
     devices:
       - /dev/snd

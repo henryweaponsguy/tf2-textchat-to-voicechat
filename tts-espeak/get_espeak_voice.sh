@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 voices=("m1" "m2" "m3" "m4" "m5" "m6" "m7" "f1" "f2" "f3" "f4")
 
@@ -9,13 +9,15 @@ speak_text() {
 
     audio_file="$(mktemp /tmp/espeak_voice-XXXXXXXXXX.wav)"
 
-    #espeak -v en+m5 -w "$audio_file" "$text"
+    # Default voice
+    # espeak -v en+m5 -w "$audio_file" "$text"
+
+    # A random voice from the 'voices' array
     espeak -v "en+${voices[RANDOM % ${#voices[@]}]}" -w "$audio_file" "$text"
 
-    (
-        paplay --device=virtual_speaker --client-name=espeak "$audio_file" >/dev/null 2>&1
-        rm -f "$audio_file"
-    ) &
+    paplay --device=virtual_speaker --client-name=espeak "$audio_file" >/dev/null 2>&1
+
+    rm -f "$audio_file"
 }
 
 
@@ -26,7 +28,7 @@ if [[ -n "$1" ]]; then
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
-        speak_text "$line"
+        speak_text "$line" &
     done
 else
     echo "Usage:"

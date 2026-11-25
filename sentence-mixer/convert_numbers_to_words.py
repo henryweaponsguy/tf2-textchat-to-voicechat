@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import re
 import sys
 
@@ -130,5 +132,5 @@ if __name__ == "__main__":
     if re_numbers.match(INPUT_VALUE):
         print(convert_numbers_to_words(INPUT_VALUE))
     else:
-        print("Error: Not a number")
+        print("ERROR: Not a number")
         sys.exit(1)

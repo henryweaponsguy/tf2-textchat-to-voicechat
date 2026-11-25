@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -83,16 +83,22 @@ EOF
     fi
 
     if [[ ! -f "${script_dir}/installers/spchapi.exe" ]] || [[ ! -f "${script_dir}/installers/tv_enua.exe" ]]; then
-        printf "%s\n" "Place the 'spchapi.exe' and 'tv_enua.exe' files in the 'installers/' directory"
-        printf "%s\n" "The files can be found in https://github.com/TETYYS/SAPI4"
-        printf "%s\n" "These installers will install the Lernout & Hauspie TruVoice voices"
+        printf "%s\n" "$(cat << EOF
+Place the 'spchapi.exe' and 'tv_enua.exe' files in the 'installers/' directory
+The files can be found in https://github.com/TETYYS/SAPI4
+These installers will install the Lernout & Hauspie TruVoice voices
+EOF
+)"
 
         exit 1
     fi
 
     if [[ ! -f "${script_dir}/installers/msttsl.exe" ]]; then
-        printf "%s\n" "'msttsl.exe' file not found. For the Microsoft Mary, Mike and Sam voices 'msttsl.exe' is required too"
-        printf "%s\n" "SHA256 for 'msttsl.exe': c87f9a489e53d250cb4ed5574af243c35db1a859e2a266e2d9d0d3b241513d5e"
+        printf "%s\n" "$(cat << EOF
+'msttsl.exe' file not found. For the Microsoft Mary, Mike and Sam voices 'msttsl.exe' is required too
+SHA256 for 'msttsl.exe': c87f9a489e53d250cb4ed5574af243c35db1a859e2a266e2d9d0d3b241513d5e
+EOF
+)"
 
         read -rp "Proceed anyway? [y/n] " choice
         if [[ ! "$choice" =~ ^[yY] ]]; then
@@ -202,5 +208,8 @@ exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     cd "${appdata_dir}/SAPI4"
 
     while true; do xvfb-run -a wine sapi4.exe; sleep 1; done & nginx -g "daemon off;" &
-    "/usr/bin/python3" "/app/text_to_speech.py"
+
+    sleep 0.5
+
+    "/app/text_to_speech.py"
 ' _ "$appdata_dir_sandboxed"

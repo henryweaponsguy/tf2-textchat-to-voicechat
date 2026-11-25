@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     git \
     libpulse-dev \
     pulseaudio \
+    python3 \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 

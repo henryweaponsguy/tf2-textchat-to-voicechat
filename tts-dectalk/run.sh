@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -138,5 +138,5 @@ exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     dectalk_dir="$1"
     export PATH="$dectalk_dir:$PATH"
 
-    "/usr/bin/python3" "/app/text_to_speech.py"
+    "/app/text_to_speech.py"
 ' _ "$dectalk_dir_sandboxed"

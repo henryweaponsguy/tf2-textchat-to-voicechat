@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import random
 import signal
 import subprocess
@@ -12,8 +14,6 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-sapi4_server = "http://127.0.0.1:5491"
-
 voices = [
     "Adult Female #1, American English (TruVoice)",
     "Adult Female #2, American English (TruVoice)",
@@ -24,6 +24,9 @@ voices = [
     "Mike",
     "Sam",
 ]
+
+
+sapi4_server = "http://127.0.0.1:5491"
 
 
 def speak_text(text):

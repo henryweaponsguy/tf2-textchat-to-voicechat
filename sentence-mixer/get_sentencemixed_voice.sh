@@ -1,21 +1,68 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 shopt -s nullglob
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
-word_list="/tmp/word_list.txt"
+exit_cleanup() {
+    if [[ -n "$mpv_pid" ]]; then
+        kill "$mpv_pid" 2>/dev/null
+        wait "$mpv_pid" 2>/dev/null
+    fi
+}
+
+
+# Exit cleanly on CTRL+C and system shutdown
+trap exit_cleanup SIGINT SIGTERM EXIT
+
+
+default_dictionary=(
+    -e "s/_/ /g"
+    -e "s/[,;]/ _comma /g"
+    -e "s/-([^0-9])/ _comma \1/g"
+    -e "s/[\.!\?]/ _period /g"
+    -e "s/[&\+]/ and /g"
+    -e "s/\=/ equals /g"
+    -e "s/@/ at /g"
+    -e "s/#/ number /g"
+    -e "s/%/ percent /g"
+    -e "s/0/ zero /g"
+    -e "s/1/ one /g"
+    -e "s/2/ two /g"
+    -e "s/3/ three /g"
+    -e "s/4/ four /g"
+    -e "s/5/ five /g"
+    -e "s/6/ six /g"
+    -e "s/7/ seven /g"
+    -e "s/8/ eight /g"
+    -e "s/9/ nine /g"
+)
+
+suffix_patterns=(
+    "^(.*)(ing)$"
+    "^(.*)(e[sd])$"
+    "^(.*)([esd]|'s)$"
+)
+
 voices_dir="${script_dir}/voices"
+
+
+mpv_pid_file="/tmp/mpv.pid"
+
+re_numbers="^-?[0-9]+(st|nd|rd|th)?$"
+
 
 mix_sentences() {
     read -r -a words <<< "$text"
 
     for i in "${!words[@]}"; do
         # Convert numbers to words
-        if [[ "${words[i]}" =~ ^-?[0-9]+(st|nd|rd|th)?$ ]]; then
+        shopt -s nocasematch
+        if [[ "${words[i]}" =~ $re_numbers ]]; then
             words[i]=$("${script_dir}/convert_numbers_to_words.sh" "${words[i]}")
         fi
+        shopt -u nocasematch
     done
 
     # Check if a custom dictionary is available
@@ -33,7 +80,7 @@ mix_sentences() {
                 "${sound_dir}/${word} "[0-9]*.wav
             )
 
-            if [[ ${#matched_files[@]} -gt 0 ]]; then
+            if (( ${#matched_files[@]} )); then
                 selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
             else
                 # If a corresponding file does not exist, use a placeholder file
@@ -42,35 +89,15 @@ mix_sentences() {
                     "$sound_dir/_placeholder "[0-9]*.wav
                 )
 
-                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                if (( ${#matched_files[@]} )); then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
                 fi
             fi
 
-            echo "file '$selected_file'"
+            echo "$selected_file"
         done > "$word_list"
     else
-        read -r -a words <<< "$(sed -E \
-            -e "s/_/ /g" \
-            -e "s/[,;]/ _comma /g" \
-            -e "s/-([^0-9])/ _comma \1/g" \
-            -e "s/[\.!\?]/ _period /g" \
-            -e "s/[&\+]/ and /g" \
-            -e "s/\=/ equals /g" \
-            -e "s/@/ at /g" \
-            -e "s/#/ number /g" \
-            -e "s/%/ percent /g" \
-            -e "s/0/ zero /g" \
-            -e "s/1/ one /g" \
-            -e "s/2/ two /g" \
-            -e "s/3/ three /g" \
-            -e "s/4/ four /g" \
-            -e "s/5/ five /g" \
-            -e "s/6/ six /g" \
-            -e "s/7/ seven /g" \
-            -e "s/8/ eight /g" \
-            -e "s/9/ nine /g" \
-        <<< "${words[*]}")"
+        read -r -a words <<< "$(sed -E "${default_dictionary[@]}" <<< "${words[*]}")"
 
         for word in "${words[@]}"; do
             selected_file=""
@@ -89,13 +116,14 @@ mix_sentences() {
 
             # Checking each suffix separately as suffixes need to be checked in a specific order.
             # This prevents returning 'cooke' instead of 'cook' when 'cooked' is requested
-            if [[ "$word" =~ (.*)(ing)$ ]]; then
-                base="${BASH_REMATCH[1]}"
-            elif [[ "$word" =~ (.*)(e[sd])$ ]]; then
-                base="${BASH_REMATCH[1]}"
-            elif [[ "$word" =~ (.*)([esd]|\'s)$ ]]; then
-                base="${BASH_REMATCH[1]}"
-            fi
+            shopt -s nocasematch
+            for suffix_pattern in "${suffix_patterns[@]}"; do
+                if [[ "$word" =~ $suffix_pattern ]]; then
+                    base="${BASH_REMATCH[1]}"
+                    break
+                fi
+            done
+            shopt -u nocasematch
 
             if [[ -n "$base" ]]; then
                 variants+=( "$base" )
@@ -119,7 +147,7 @@ mix_sentences() {
                     "${sound_dir}/${variant} "[0-9]*.wav
                 )
 
-                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                if (( ${#matched_files[@]} )); then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
                     break
                 fi
@@ -132,27 +160,13 @@ mix_sentences() {
                     "$sound_dir/_placeholder "[0-9]*.wav
                 )
 
-                if [[ ${#matched_files[@]} -gt 0 ]]; then
+                if (( ${#matched_files[@]} )); then
                     selected_file="${matched_files[RANDOM % ${#matched_files[@]}]}"
                 fi
             fi
 
-            echo "file '$selected_file'"
+            echo "$selected_file"
         done > "$word_list"
-    fi
-
-    if [[ -s "$word_list" ]]; then
-        ffmpeg \
-            -hide_banner \
-            -loglevel error \
-            -f concat \
-            -safe 0 \
-            -i "$word_list" \
-            -ar 22050 \
-            -ac 1 \
-            -c copy \
-            -y \
-            "$audio_file"
     fi
 }
 
@@ -163,14 +177,23 @@ speak_text() {
     sound_dir="${voices_dir}/${voice}"
     [[ -d "$sound_dir" && -n "$text" ]] || return
 
-    audio_file="$(mktemp /tmp/sentencemixed_voice-XXXXXXXXXX.wav)"
+    word_list="$(mktemp /tmp/sentencemixed_word_list-XXXXXXXXXX.m3u)"
 
     mix_sentences
 
-    (
-        paplay --device=virtual_speaker --client-name=sentence-mixer "$audio_file" >/dev/null 2>&1
-        rm -f "$audio_file"
-    ) &
+    mpv \
+        --audio-device=pulse/virtual_speaker \
+        --audio-client-name=sentence-mixer \
+        --no-video \
+        --gapless-audio=yes \
+        --really-quiet \
+        "$word_list" \
+        >/dev/null 2>&1 &
+    mpv_pid=$!
+    wait "$mpv_pid"
+    mpv_pid=""
+
+    rm -f "$word_list"
 }
 
 
@@ -178,11 +201,13 @@ speak_text() {
 if [[ -n "$1" ]]; then
     # Command-line mode
     speak_text "$*"
+    wait
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
-        speak_text "$line"
+        speak_text "$line" &
     done
+    wait
 else
     echo "Usage:"
     echo "  $0 \"Your text here\"     # Speak a single line"

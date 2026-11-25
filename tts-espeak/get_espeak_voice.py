@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import random
 import signal
 import subprocess
@@ -23,7 +25,10 @@ def speak_text(text):
         audio_file = file.name
 
     try:
+        # Default voice
         # subprocess.run(["espeak", "-v", "en+m5", "-w", audio_file, text])
+
+        # A random voice from the 'voices' array
         subprocess.run(
             ["espeak", "-v", f"en+{random.choice(voices)}", "-w", audio_file, text]
         )

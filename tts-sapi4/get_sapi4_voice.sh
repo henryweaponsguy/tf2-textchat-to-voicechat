@@ -1,6 +1,4 @@
-#!/bin/bash
-
-sapi4_server="http://127.0.0.1:5491"
+#!/usr/bin/bash
 
 voices=(
     "Adult%20Female%20%231%2C%20American%20English%20(TruVoice)"
@@ -14,6 +12,9 @@ voices=(
 )
 
 
+sapi4_server="http://127.0.0.1:5491"
+
+
 speak_text() {
     text="$1"
     [[ -z "$text" ]] && return
@@ -23,14 +24,14 @@ speak_text() {
     audio_file="$(mktemp /tmp/sapi4_voice-XXXXXXXXXX.wav)"
 
     # BonziBUDDY voice
-    #voice="Adult%20Male%20%232%2C%20American%20English%20(TruVoice)"
-    #pitch="140"
-    #speed="157"
+    # voice="Adult%20Male%20%232%2C%20American%20English%20(TruVoice)"
+    # pitch="140"
+    # speed="157"
 
     # Microsoft Sam voice
-    #voice="Sam"
-    #pitch="100"
-    #speed="150"
+    # voice="Sam"
+    # pitch="100"
+    # speed="150"
 
     # A random voice (with a random pitch and speed) from the 'voices' array
     voice=${voices[RANDOM % ${#voices[@]}]}
@@ -51,10 +52,9 @@ speak_text() {
 &speed=${speed}" \
     --silent --show-error --output "${audio_file}"
 
-    (
-        paplay --device=virtual_speaker --client-name=sapi4 "$audio_file" >/dev/null 2>&1
-        rm -f "$audio_file"
-    ) &
+    paplay --device=virtual_speaker --client-name=sapi4 "$audio_file" >/dev/null 2>&1
+
+    rm -f "$audio_file"
 }
 
 
@@ -65,7 +65,7 @@ if [[ -n "$1" ]]; then
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
-        speak_text "$line"
+        speak_text "$line" &
     done
 else
     echo "Usage:"

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import random
 import signal
@@ -7,9 +9,8 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
+from langdetect import LangDetectException, detect
 from lexilang.detector import detect as dict_detect
-from langdetect import detect
-from langdetect import LangDetectException
 
 from get_piper_voice import speak_text
 
@@ -25,18 +26,7 @@ def translate(text):
     if not text:
         return
 
-    if len(text) <= 20:
-        language = dict_detect(text)[0]
-    else:
-        try:
-            language = detect(text)
-        except LangDetectException:
-            language = "en"
-
-    if language == "en":
-        return
-
-    data = {"q": text, "source": language, "target": "en"}
+    data = {"q": text, "source": "auto", "target": "en"}
 
     post_request = urllib.request.Request(
         translation_server,
@@ -46,14 +36,17 @@ def translate(text):
     )
 
     with urllib.request.urlopen(post_request) as response:
-        translation = json.load(response)["translatedText"]
+        translation = json.load(response)
 
-    if translation == "null":
+    language = translation["detectedLanguage"]["language"]
+    if language == "en":
         return
 
-    print(f"{text}\n[{language}]\n{translation}\n====================")
+    translated_text = translation["translatedText"]
 
-    speak_text(translation)
+    print(f"{text}\n[{language}]\n{translated_text}\n====================")
+
+    speak_text(translated_text)
 
 
 if __name__ == "__main__":

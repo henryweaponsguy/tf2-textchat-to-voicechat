@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Use this if running in a Docker container:
 # piper_server="http://tf2-translator-tts:5000/synthesize"
@@ -25,11 +25,10 @@ EOF
     curl -X POST -H "Content-Type: application/json" --data "$data" \
     --silent --show-error --output "$audio_file" "$piper_server"
 
-    (
-        #paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
-        paplay --client-name=piper "$audio_file" >/dev/null 2>&1
-        rm -f "$audio_file"
-    ) &
+    #paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
+    paplay --client-name=piper "$audio_file" >/dev/null 2>&1
+
+    rm -f "$audio_file"
 }
 
 
@@ -40,7 +39,7 @@ if [[ -n "$1" ]]; then
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
-        speak_text "$line"
+        speak_text "$line" &
     done
 else
     echo "Usage:"

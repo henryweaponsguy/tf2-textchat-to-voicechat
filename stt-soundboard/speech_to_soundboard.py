@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import queue
 import random
@@ -20,19 +22,15 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-# Soundboard sounds directory
-sound_dir = script_dir / "sounds"
-
-
 if len(sys.argv) > 1:
     if sys.argv[1] == "-h":
         print("Usage:")
-        print(f"python3 {sys.argv[0]} -h                    # Show this message")
+        print(f"{sys.argv[0]} -h                    # Show this message")
         print(
-            f"python3 {sys.argv[0]}                       # Use the default input device"
+            f"{sys.argv[0]}                       # Use the default input device"
         )
         print(
-            f"python3 {sys.argv[0]} <audio device id>     # Use a specific input device"
+            f"{sys.argv[0]} <audio device id>     # Use a specific input device"
         )
 
         print("Audio device list:")
@@ -47,11 +45,16 @@ else:
 device_info = sd.query_devices(audio_device, "input")
 sample_rate = int(device_info["default_samplerate"])
 
+
+# Soundboard sounds directory
+sound_dir = script_dir / "sounds"
+
 # Download the speech recognition model here: https://alphacephei.com/vosk/models and extract the archive to 'models/'.
 # The 'vosk-model-small-en-us-*' model works the best for fast speech recognition and requires around 0.5 GB of RAM.
 # The 'vosk-model-en-us-*-gigaspeech' model is more accurate, but somewhat slower and requires 6+ GB of RAM.
 model = Model(str(script_dir / "models" / "vosk-model-en-us-gigaspeech"))
 # model = Model(str(script_dir / "models" / "vosk-model-small-en-us"))
+
 
 audio_queue = queue.Queue()
 
@@ -89,17 +92,21 @@ with sd.RawInputStream(
         data = audio_queue.get()
         if rec.AcceptWaveform(data):
             result = json.loads(rec.Result())
+
             # Extract the message
-            line = result.get("text", "")
-            # Keep only letters, digits and spaces
-            line = re_allowed_characters.sub("", line)
-            # Skip empty messages
-            if not line:
+            message = result.get("text", "")
+
+            # Remove non-ASCII and control characters
+            message = re_allowed_characters.sub("", message)
+
+            # Convert the message to lowercase
+            message = message.lower()
+
+            if not message:
                 continue
 
-            # Match files
-            matched_files = list(Path(sound_dir).glob(f"{line}.*")) + list(
-                Path(sound_dir).glob(f"{line} [0-9]*.*")
+            matched_files = list(Path(sound_dir).glob(f"{message}.*")) + list(
+                Path(sound_dir).glob(f"{message} [0-9]*.*")
             )
 
             if matched_files:

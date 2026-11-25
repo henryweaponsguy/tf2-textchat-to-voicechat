@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 readonly INPUT_VALUE="$1"
 
@@ -47,6 +47,9 @@ declare -A IRREGULAR_ORDINALS=(
 )
 readonly IRREGULAR_ORDINALS
 
+re_numbers="^-?[0-9]+(st|nd|rd|th)?$"
+re_ordinal_suffixes="(st|nd|rd|th)$"
+
 
 get_separated_numbers() {
     # Split a number into phonetic chunks. For example, '345' is converted into '3 100 40 5'
@@ -78,7 +81,7 @@ get_separated_numbers() {
 
         phonetic_chunks+=( "$base_number" )
 
-        if [[ "$remainder" -gt 0 ]]; then
+        if (( "$remainder" )); then
             phonetic_chunks+=( $(get_separated_numbers "$remainder") )
         fi
 
@@ -99,10 +102,12 @@ convert_numbers_to_words() {
     fi
 
     # Check for ordinal numerals
-    if [[ "$number" =~ (st|nd|rd|th)$ ]]; then
+    shopt -s nocasematch
+    if [[ "$number" =~ $re_ordinal_suffixes ]]; then
         local ordinal="true"
         number="${number::-2}"
     fi
+    shopt -u nocasematch
 
     # Handle natural numbers
     if [[ "$number" -ge 1000000 ]]; then
@@ -135,9 +140,10 @@ convert_numbers_to_words() {
     echo "${words[*]}"
 }
 
-
-if [[ "$INPUT_VALUE" =~ ^-?[0-9]+(st|nd|rd|th)?$ ]]; then
+shopt -s nocasematch
+if [[ "$INPUT_VALUE" =~ $re_numbers ]]; then
     convert_numbers_to_words "$INPUT_VALUE"
 else
-    echo "Error: Not a number"
+    echo "ERROR: Not a number"
 fi
+shopt -u nocasematch

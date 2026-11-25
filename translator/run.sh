@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -211,9 +211,12 @@ runtime_options=(
 exec bwrap "${runtime_options[@]}" "/bin/bash" -c '
     venv="$1"
     venv_tts="$2"
-    export PATH="$venv/bin:$PATH"
-bash
+    source "$venv/bin/activate"
+
     libretranslate --port 5001 --load-only cs,da,de,en,es,fi,fr,hu,it,ja,ko,nl,nb,pl,pt,ro,ru,sv,tr,uk,zh >/dev/null 2>&1 &
     "$venv_tts/bin/python3" -m piper.http_server --data-dir models-tts/ -m "en_US-joe-medium" >/dev/null 2>&1 &
-    "$venv/bin/python3" "/app/translator.py"
+
+    sleep 0.5
+
+    "/app/translator.py"
 ' _ "$venv_sandboxed" "$venv_tts_sandboxed"

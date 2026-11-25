@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-piper_server="http://127.0.0.1:5000/synthesize"
-
-# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
+# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-joe-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples
 voices=(
     "en_GB-alan-medium"
@@ -19,6 +17,9 @@ voices=(
 )
 
 
+piper_server="http://127.0.0.1:5000/synthesize"
+
+
 speak_text() {
     text="$1"
     [[ -z "$text" ]] && return
@@ -26,7 +27,7 @@ speak_text() {
     audio_file="$(mktemp /tmp/piper_voice-XXXXXXXXXX.wav)"
 
     # Default voice
-    #voice="en_GB-alan-medium"
+    #voice="en_US-joe-medium"
     #length_scale=1
 
     # A random voice (with a random speed) from the 'voices' array
@@ -78,10 +79,8 @@ EOF
     curl -X POST -H "Content-Type: application/json" --data "$data" \
     --silent --show-error --output "$audio_file" "$piper_server"
 
-    (
-        paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
-        rm -f "$audio_file"
-    ) &
+    paplay --device=virtual_speaker --client-name=piper "$audio_file" >/dev/null 2>&1
+    rm -f "$audio_file"
 }
 
 
@@ -92,7 +91,7 @@ if [[ -n "$1" ]]; then
 elif ! tty -s; then
     # Streaming mode
     while IFS= read -r line; do
-        speak_text "$line"
+        speak_text "$line" &
     done
 else
     echo "Usage:"

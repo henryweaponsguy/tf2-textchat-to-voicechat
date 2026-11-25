@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import random
 import signal
@@ -12,9 +14,7 @@ signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
 
-piper_server = "http://127.0.0.1:5000/synthesize"
-
-# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-alan-medium>
+# Download voices by running: python3 -m piper.download_voices --data-dir "models/" <model name, e.g. en_US-joe-medium>
 # Or download them here: https://rhasspy.github.io/piper-samples
 voices = [
     "en_GB-alan-medium",
@@ -31,6 +31,9 @@ voices = [
 ]
 
 
+piper_server = "http://127.0.0.1:5000/synthesize"
+
+
 def speak_text(text):
     if not text:
         return
@@ -42,7 +45,7 @@ def speak_text(text):
 
     try:
         # Default voice
-        # voice="en_GB-alan-medium"
+        # voice="en_US-joe-medium"
         # length_scale=1
 
         # A random voice (with a random speed) from the 'voices' array
